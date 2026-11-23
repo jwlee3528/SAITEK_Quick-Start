@@ -27,6 +27,7 @@ class MeasurementResult:
         self.waveform_x: Optional[np.ndarray] = None
         self.waveform_y: Optional[np.ndarray] = None
         self.waveform_y2: Optional[np.ndarray] = None
+        self.waveform_multi_y: Dict[str, np.ndarray] = {} # series_name -> waveform array (for multi-channel scope)
         self.waveform_x_label: str = "Time (s)"
         self.waveform_y_label: str = "Voltage (V)"
         self.waveform_title: str = ""
@@ -444,17 +445,32 @@ class OscilloscopeDriver(BaseCategoryDriver):
     """
     04. Oscilloscopes Driver (TBS1000C, TBS2000B, 2 Series MSO, 3 Series MDO, 4/5/6 Series MSO, 7 Series DPO, DPO70000)
     Ref: 7 Oscilloscope Programmer Manuals in 04. Oscilloscopes
+    Supports single or multi-channel simultaneous selection (e.g. CH1, CH2, CH3, CH4).
     """
+
+    @staticmethod
+    def parse_selected_channels(ch_input: Any) -> List[str]:
+        """Normalizes channel input (str or list) into an ordered list of channels ['CH1', ...]."""
+        if isinstance(ch_input, (list, tuple)):
+            raw_str = ",".join(str(x) for x in ch_input)
+        else:
+            raw_str = str(ch_input or "CH1")
+        found: List[str] = []
+        if "DUAL" in raw_str.upper():
+            return ["CH1", "CH2"]
+        for c in ("CH1", "CH2", "CH3", "CH4"):
+            if c in raw_str.upper():
+                found.append(c)
+        return found if found else ["CH1"]
 
     def configure_and_start(self, inputs: Dict[str, Any], selected_meas: List[str]):
         super().configure_and_start(inputs, selected_meas)
-        ch_choice = inputs.get("channel", "CH1")
-        ch_main = "CH1" if "Dual" in ch_choice else ch_choice
+        channels = self.parse_selected_channels(inputs.get("channel", "CH1"))
+        ch_main = channels[0]
 
         self.visa.write("HEADer OFF")
-        self.visa.write(f"SELect:{ch_main} ON")
-        if "Dual" in ch_choice:
-            self.visa.write("SELect:CH2 ON")
+        for ch in channels:
+            self.visa.write(f"SELect:{ch} ON")
 
         if inputs.get("use_autoset", False):
             self.visa.write("AUTOSet EXECute")
@@ -463,14 +479,15 @@ class OscilloscopeDriver(BaseCategoryDriver):
             v_scale = float(inputs.get("v_scale", 1.0))
             v_off = float(inputs.get("v_offset", 0.0))
             h_scale = float(inputs.get("h_scale", 0.001))
-            trig_src = inputs.get("trig_source", "CH1")
+            trig_src = inputs.get("trig_source", ch_main)
             trig_lvl = float(inputs.get("trig_level", 0.0))
             trig_slp = inputs.get("trig_slope", "RISe")
             acq_mode = inputs.get("acq_mode", "SAMple")
 
-            self.visa.write(f"{ch_main}:COUPling {coup}")
-            self.visa.write(f"{ch_main}:SCAle {v_scale}")
-            self.visa.write(f"{ch_main}:OFFSet {v_off}")
+            for ch in channels:
+                self.visa.write(f"{ch}:COUPling {coup}")
+                self.visa.write(f"{ch}:SCAle {v_scale}")
+                self.visa.write(f"{ch}:OFFSet {v_off}")
             self.visa.write(f"HORizontal:SCAle {h_scale}")
             self.visa.write(f"TRIGger:A:EDGE:SOUrce {trig_src}")
             self.visa.write(f"TRIGger:A:EDGE:SLOpe {trig_slp}")
@@ -491,10 +508,11 @@ class OscilloscopeDriver(BaseCategoryDriver):
         self.step_count += 1
         res.step_index = self.step_count
 
-        ch_choice = inputs.get("channel", "CH1")
-        ch_main = "CH1" if "Dual" in ch_choice else ch_choice
+        channels = self.parse_selected_channels(inputs.get("channel", "CH1"))
+        ch_main = channels[0]
+        multi = len(channels) > 1
 
-        # Automated immediate measurements
+        # Automated immediate measurements across all selected channels
         meas_map = {
             "meas_freq": ("FREQuency", "Frequency (Hz)"),
             "meas_period": ("PERIod", "Period (s)"),
@@ -506,37 +524,64 @@ class OscilloscopeDriver(BaseCategoryDriver):
         }
         for key, (scpi_type, plot_lbl) in meas_map.items():
             if key in selected_meas:
-                self.visa.write(f"MEASUrement:IMMed:SOUrce1 {ch_main}")
-                self.visa.write(f"MEASUrement:IMMed:TYPe {scpi_type}")
-                val_str, _ = self.visa.query("MEASUrement:IMMed:VALue?")
-                try:
-                    val = float(val_str.split()[-1])
-                except ValueError:
-                    val = 0.0
-                res.scalars[key] = round(val, 6)
-                res.primary_plot_y[plot_lbl] = val
+                ch_vals: List[Tuple[str, float]] = []
+                for ch in channels:
+                    self.visa.write(f"MEASUrement:IMMed:SOUrce1 {ch}")
+                    self.visa.write(f"MEASUrement:IMMed:TYPe {scpi_type}")
+                    val_str, _ = self.visa.query("MEASUrement:IMMed:VALue?")
+                    try:
+                        val = round(float(val_str.split()[-1]), 6)
+                    except ValueError:
+                        val = 0.0
+                    ch_vals.append((ch, val))
+                    res.scalars[f"{key}_{ch}"] = val
+                    series_key = f"{ch} {plot_lbl}" if multi else plot_lbl
+                    res.primary_plot_y[series_key] = val
 
-        # Waveform CURVe? transfer and scaling: Y = YZERO + YMULT * (data - YOFF)
+                if multi:
+                    res.scalars[key] = " | ".join(f"{ch}:{v:g}" for ch, v in ch_vals)
+                else:
+                    res.scalars[key] = ch_vals[0][1]
+
+        # Waveform CURVe? transfer and scaling across all selected channels: Y = YZERO + YMULT * (data - YOFF)
         if "wfm_curve" in selected_meas:
             v_scale = float(inputs.get("v_scale", 1.0))
             h_scale = float(inputs.get("h_scale", 0.001))
-            curve_str, _ = self.visa.query("CURVe?")
-            try:
-                raw_pts = np.array([float(x) for x in curve_str.split(",") if x.strip()], dtype=float)
-            except Exception:
-                raw_pts = np.zeros(500)
             ymult = v_scale / 25.0
             yoff = 0.0
             yzero = float(inputs.get("v_offset", 0.0))
-            v_wave = yzero + ymult * (raw_pts - yoff)
-            t_wave = np.linspace(0, h_scale * 10.0, len(v_wave)) * 1e3  # ms
 
+            t_wave: Optional[np.ndarray] = None
+            first_wave: Optional[np.ndarray] = None
+            total_pts = 0
+            for ch in channels:
+                self.visa.write(f"DATa:SOUrce {ch}")
+                curve_str, _ = self.visa.query("CURVe?")
+                try:
+                    raw_pts = np.array([float(x) for x in curve_str.split(",") if x.strip()], dtype=float)
+                except Exception:
+                    raw_pts = np.zeros(500)
+                v_wave = yzero + ymult * (raw_pts - yoff)
+                if t_wave is None or len(t_wave) != len(v_wave):
+                    t_wave = np.linspace(0, h_scale * 10.0, len(v_wave)) * 1e3  # ms
+                if first_wave is None:
+                    first_wave = v_wave
+                res.waveform_multi_y[f"{ch} Voltage (V)"] = v_wave
+                total_pts = len(v_wave)
+
+            ch_join = "+".join(channels)
             res.waveform_x = t_wave
-            res.waveform_y = v_wave
+            res.waveform_y = first_wave
             res.waveform_x_label = "Time (ms)"
-            res.waveform_y_label = f"{ch_main} Voltage (V)"
-            res.waveform_title = f"Oscilloscope {ch_main} Waveform ({len(v_wave)} pts, {v_scale} V/div, {h_scale*1e3:g} ms/div)"
-            res.scalars["wfm_curve"] = f"{len(v_wave)} samples captured"
+            res.waveform_y_label = f"{ch_join} Voltage (V)" if multi else f"{ch_main} Voltage (V)"
+            res.waveform_title = (
+                f"Oscilloscope {ch_join} Waveform ({total_pts} pts/ch, {v_scale} V/div, {h_scale*1e3:g} ms/div)"
+            )
+            res.scalars["wfm_curve"] = (
+                f"{ch_join} ({total_pts} pts × {len(channels)}CH)" if multi else f"{total_pts} samples captured"
+            )
+            for ch in channels:
+                res.scalars[f"wfm_curve_{ch}"] = f"{total_pts} pts"
 
         return res
 

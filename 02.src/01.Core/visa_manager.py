@@ -267,6 +267,10 @@ class VirtualInstrumentSimulator:
         # Scope
         if "MEASUREMENT:IMMED:TYPE" in cu or "MEASU:IMM:TYP" in cu:
             self.scope_meas_type = cu.split()[-1]
+        elif "MEASUREMENT:IMMED:SOURCE" in cu or "MEASU:IMM:SOU" in cu:
+            self.scope_source = cu.split()[-1]
+        elif "DATA:SOURCE" in cu or "DAT:SOU" in cu:
+            self.scope_source = cu.split()[-1]
         elif "DATA:STOP" in cu or "DAT:STOP" in cu:
             self.scope_stop = int(self._extract_float(cu, 1000))
         elif re.match(r"^:?CH[1-4]:SCA", cu):
@@ -410,32 +414,44 @@ class VirtualInstrumentSimulator:
 
         # Scope queries
         if "WFMOUTPRE?" in cu or "WFMPRE?" in cu:
-            return f"1;8;ASC;RP;MSB;{self.scope_stop};\"CH1, DC coupling\";Y;{self.scope_hscale/100.0:.6e};0;\"s\";{self.scope_vscale/25.0:.6e};0.0;0.0;\"V\""
+            return f"1;8;ASC;RP;MSB;{self.scope_stop};\"{self.scope_source}, DC coupling\";Y;{self.scope_hscale/100.0:.6e};0;\"s\";{self.scope_vscale/25.0:.6e};0.0;0.0;\"V\""
         if "CURVE?" in cu or "CURV?" in cu:
             t0 = time.time() - self.start_time
+            ch_num = int(self.scope_source[-1]) if self.scope_source[-1].isdigit() else 1
+            ch_phase_shift = (ch_num - 1) * (math.pi / 3.0)
+            amp_factor = {1: 1.0, 2: 0.75, 3: 0.55, 4: 0.40}.get(ch_num, 1.0)
             pts = []
             for idx in range(self.scope_stop):
-                phase = 2 * math.pi * (idx / max(1, self.scope_stop)) * 3.0 + t0 * 4.0
-                val = int(60 * math.sin(phase) + 8 * math.sin(3 * phase) + random.gauss(0, 1.8))
+                phase = 2 * math.pi * (idx / max(1, self.scope_stop)) * 3.0 + t0 * 4.0 + ch_phase_shift
+                if ch_num == 2:
+                    # Slightly square-ish or cosine-shifted wave on CH2 for distinct visual comparison
+                    val = int(60 * amp_factor * math.cos(phase) + 12 * math.sin(2 * phase) + random.gauss(0, 1.8))
+                elif ch_num == 3:
+                    val = int(60 * amp_factor * math.sin(2 * phase) + random.gauss(0, 1.8))
+                else:
+                    val = int(60 * amp_factor * math.sin(phase) + 8 * math.sin(3 * phase) + random.gauss(0, 1.8))
                 pts.append(str(max(-127, min(127, val))))
             return ",".join(pts)
         if "MEASU" in cu and ("VAL" in cu or "MEAN?" in cu):
             mt = self.scope_meas_type.upper()
+            ch_num = int(self.scope_source[-1]) if self.scope_source[-1].isdigit() else 1
+            amp_factor = {1: 1.0, 2: 0.75, 3: 0.55, 4: 0.40}.get(ch_num, 1.0)
+            freq_factor = 2.0 if ch_num == 3 else 1.0
             if "FREQ" in mt:
-                return f"{1000.0 + random.gauss(0, 0.35):.4f}"
+                return f"{1000.0 * freq_factor + random.gauss(0, 0.35):.4f}"
             if "PERI" in mt:
-                return f"{0.001 + random.gauss(0, 1e-7):.7e}"
+                return f"{(0.001 / freq_factor) + random.gauss(0, 1e-7):.7e}"
             if "PK2P" in mt:
-                return f"{self.scope_vscale * 4.8 + random.gauss(0, 0.015):.4f}"
+                return f"{self.scope_vscale * 4.8 * amp_factor + random.gauss(0, 0.015):.4f}"
             if "MEAN" in mt:
-                return f"{self.scope_voffset + random.gauss(0, 0.004):.5f}"
+                return f"{self.scope_voffset + (ch_num - 1) * 0.02 + random.gauss(0, 0.004):.5f}"
             if "RMS" in mt:
-                return f"{self.scope_vscale * 1.697 + random.gauss(0, 0.008):.4f}"
+                return f"{self.scope_vscale * 1.697 * amp_factor + random.gauss(0, 0.008):.4f}"
             if "MAX" in mt:
-                return f"{self.scope_vscale * 2.4 + random.gauss(0, 0.01):.4f}"
+                return f"{self.scope_vscale * 2.4 * amp_factor + random.gauss(0, 0.01):.4f}"
             if "MIN" in mt:
-                return f"{-self.scope_vscale * 2.4 + random.gauss(0, 0.01):.4f}"
-            return f"{1.0 + random.gauss(0, 0.01):.4f}"
+                return f"{-self.scope_vscale * 2.4 * amp_factor + random.gauss(0, 0.01):.4f}"
+            return f"{1.0 * amp_factor + random.gauss(0, 0.01):.4f}"
 
         # Spectrum Analyzer queries
         if "SPEC" in cu and "TRAC" in cu:

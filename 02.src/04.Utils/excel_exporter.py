@@ -30,6 +30,7 @@ def export_session_to_excel(
     last_waveform_y: Optional[np.ndarray] = None,
     waveform_x_label: str = "X",
     waveform_y_label: str = "Y",
+    last_waveform_multi_y: Optional[Dict[str, np.ndarray]] = None,
 ) -> str:
     os.makedirs(os.path.dirname(os.path.abspath(filepath)), exist_ok=True)
     wb = Workbook()
@@ -194,25 +195,46 @@ def export_session_to_excel(
         ws_data.cell(row=1, column=1, value="기록된 측정 데이터가 없습니다.").font = bold_font
 
     # 4. Waveform / Spectrum Trace Sheet (if available)
-    if last_waveform_x is not None and last_waveform_y is not None and len(last_waveform_x) > 0:
+    if last_waveform_x is not None and len(last_waveform_x) > 0 and (
+        last_waveform_y is not None or (last_waveform_multi_y and len(last_waveform_multi_y) > 0)
+    ):
         ws_wfm = wb.create_sheet(title="4_Waveform_Trace")
         c_idx_h = ws_wfm.cell(row=1, column=1, value="Point Index")
         c_x_h = ws_wfm.cell(row=1, column=2, value=waveform_x_label)
-        c_y_h = ws_wfm.cell(row=1, column=3, value=waveform_y_label)
-        for c in (c_idx_h, c_x_h, c_y_h):
+        for c in (c_idx_h, c_x_h):
             c.fill = header_fill
             c.font = header_font
             c.border = thin_border
-
-        n_pts = min(len(last_waveform_x), len(last_waveform_y))
-        for i in range(n_pts):
-            ws_wfm.cell(row=i + 2, column=1, value=i + 1).font = reg_font
-            ws_wfm.cell(row=i + 2, column=2, value=float(last_waveform_x[i])).font = reg_font
-            ws_wfm.cell(row=i + 2, column=3, value=float(last_waveform_y[i])).font = reg_font
-
         ws_wfm.column_dimensions["A"].width = 15
         ws_wfm.column_dimensions["B"].width = 24
-        ws_wfm.column_dimensions["C"].width = 24
+
+        if last_waveform_multi_y and len(last_waveform_multi_y) > 1:
+            y_items = list(last_waveform_multi_y.items())
+            for col_offset, (s_name, _) in enumerate(y_items):
+                c_yh = ws_wfm.cell(row=1, column=3 + col_offset, value=s_name)
+                c_yh.fill = header_fill
+                c_yh.font = header_font
+                c_yh.border = thin_border
+                ws_wfm.column_dimensions[get_column_letter(3 + col_offset)].width = 24
+
+            n_pts = min([len(last_waveform_x)] + [len(arr) for _, arr in y_items])
+            for i in range(n_pts):
+                ws_wfm.cell(row=i + 2, column=1, value=i + 1).font = reg_font
+                ws_wfm.cell(row=i + 2, column=2, value=float(last_waveform_x[i])).font = reg_font
+                for col_offset, (_, arr) in enumerate(y_items):
+                    ws_wfm.cell(row=i + 2, column=3 + col_offset, value=float(arr[i])).font = reg_font
+        elif last_waveform_y is not None:
+            c_y_h = ws_wfm.cell(row=1, column=3, value=waveform_y_label)
+            c_y_h.fill = header_fill
+            c_y_h.font = header_font
+            c_y_h.border = thin_border
+            ws_wfm.column_dimensions["C"].width = 24
+
+            n_pts = min(len(last_waveform_x), len(last_waveform_y))
+            for i in range(n_pts):
+                ws_wfm.cell(row=i + 2, column=1, value=i + 1).font = reg_font
+                ws_wfm.cell(row=i + 2, column=2, value=float(last_waveform_x[i])).font = reg_font
+                ws_wfm.cell(row=i + 2, column=3, value=float(last_waveform_y[i])).font = reg_font
 
     wb.save(filepath)
     return filepath

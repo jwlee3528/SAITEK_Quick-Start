@@ -564,7 +564,15 @@ CATEGORY_PROFILES: Dict[str, CategoryProfile] = {
             ),
         ],
         input_parameters=[
-            InputParameterSpec("channel", "측정 소스 채널 (Source Channel)", "choice", "CH1", choices=["CH1", "CH2", "CH3", "CH4", "CH1 & CH2 (Dual)"], tooltip="SELect:CH<x> ON / DATa:SOUrce", group="1. 수직축(Vertical) 설정"),
+            InputParameterSpec(
+                "channel",
+                "측정 소스 채널 (Source Channels - 다중 선택 가능)",
+                "multi_choice",
+                "CH1",
+                choices=["CH1", "CH2", "CH3", "CH4"],
+                tooltip="원하는 채널(CH1~CH4)을 1개 이상 체크하면 선택된 모든 채널의 파형과 측정값을 동시에 수집합니다 (SELect:CH<x> ON / DATa:SOUrce CH<x>)",
+                group="1. 수직축(Vertical) 설정",
+            ),
             InputParameterSpec("coupling", "입력 커플링 (Coupling)", "choice", "DC", choices=["DC", "AC", "GND", "DCREJect"], tooltip="CH<x>:COUPling", group="1. 수직축(Vertical) 설정"),
             InputParameterSpec("v_scale", "수직 스케일 (Vertical Scale)", "float", 1.0, unit="V/div", min_val=0.001, max_val=100.0, tooltip="CH<x>:SCAle", group="1. 수직축(Vertical) 설정"),
             InputParameterSpec("v_offset", "수직 오프셋 (Vertical Offset)", "float", 0.0, unit="V", min_val=-500.0, max_val=500.0, tooltip="CH<x>:OFFSet", group="1. 수직축(Vertical) 설정"),

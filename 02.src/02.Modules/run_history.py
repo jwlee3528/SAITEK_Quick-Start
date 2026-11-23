@@ -97,6 +97,7 @@ class RunRecord:
     series_history: Dict[str, List[float]] = field(default_factory=dict)
     waveform_x: Optional[np.ndarray] = None
     waveform_y: Optional[np.ndarray] = None
+    waveform_multi_y: Dict[str, np.ndarray] = field(default_factory=dict)
     wfm_x_label: str = "X"
     wfm_y_label: str = "Y"
     exported_paths: List[str] = field(default_factory=list)
@@ -175,18 +176,34 @@ def draw_run(
     if (
         is_wfm_mode
         and run.waveform_x is not None
-        and run.waveform_y is not None
+        and (run.waveform_y is not None or bool(run.waveform_multi_y))
     ):
         if set_title:
             plot.setTitle(f"{title_prefix} - {mode_text}".strip(" -"), color="#e2e8f0")
         plot.setLabel("bottom", run.wfm_x_label, color="#cbd5e1")
         plot.setLabel("left", run.wfm_y_label, color="#cbd5e1")
+        if run.waveform_multi_y and len(run.waveform_multi_y) > 1:
+            used_wfm = 0
+            for s_name, y_arr in run.waveform_multi_y.items():
+                n = min(len(run.waveform_x), len(y_arr))
+                if n <= 0:
+                    continue
+                c = RUN_COLORS[(color_offset + used_wfm) % n_colors]
+                plot.plot(
+                    run.waveform_x[:n],
+                    y_arr[:n],
+                    pen=pg.mkPen(color=c, width=2),
+                    name=f"{prefix}{s_name}",
+                )
+                used_wfm += 1
+            return max(1, used_wfm)
         c = RUN_COLORS[color_offset % n_colors]
         if folder == "05_SPECTRUM" and color_offset == 0:
             c = "#facc15"
+        y_single = run.waveform_y if run.waveform_y is not None else next(iter(run.waveform_multi_y.values()))
         plot.plot(
             run.waveform_x,
-            run.waveform_y,
+            y_single,
             pen=pg.mkPen(color=c, width=2),
             name=f"{prefix}{run.wfm_y_label}",
         )
@@ -501,6 +518,7 @@ def export_run_excel(run: RunRecord, filepath: str, rows: Optional[List[Dict[str
         last_waveform_y=run.waveform_y,
         waveform_x_label=run.wfm_x_label,
         waveform_y_label=run.wfm_y_label,
+        last_waveform_multi_y=run.waveform_multi_y,
     )
 
 
@@ -514,13 +532,20 @@ def export_run_csv(run: RunRecord, filepath: str, rows: Optional[List[Dict[str, 
         for r in out_rows:
             w.writerow({c: r.get(c, "") for c in cols})
     paths.append(filepath)
-    if run.waveform_x is not None and run.waveform_y is not None:
+    if run.waveform_x is not None and (run.waveform_y is not None or bool(run.waveform_multi_y)):
         wpath = os.path.splitext(filepath)[0] + "_waveform.csv"
         with open(wpath, "w", newline="", encoding="utf-8-sig") as f:
             w2 = csv.writer(f)
-            w2.writerow(["Point", run.wfm_x_label, run.wfm_y_label])
-            for i, (xv, yv) in enumerate(zip(run.waveform_x, run.waveform_y), start=1):
-                w2.writerow([i, float(xv), float(yv)])
+            if run.waveform_multi_y and len(run.waveform_multi_y) > 1:
+                y_items = list(run.waveform_multi_y.items())
+                w2.writerow(["Point", run.wfm_x_label] + [s_name for s_name, _ in y_items])
+                n_pts = min([len(run.waveform_x)] + [len(arr) for _, arr in y_items])
+                for i in range(n_pts):
+                    w2.writerow([i + 1, float(run.waveform_x[i])] + [float(arr[i]) for _, arr in y_items])
+            elif run.waveform_y is not None:
+                w2.writerow(["Point", run.wfm_x_label, run.wfm_y_label])
+                for i, (xv, yv) in enumerate(zip(run.waveform_x, run.waveform_y), start=1):
+                    w2.writerow([i, float(xv), float(yv)])
         paths.append(wpath)
     return paths
 

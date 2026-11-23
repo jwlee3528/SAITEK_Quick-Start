@@ -56,7 +56,7 @@ from PyQt6.QtGui import QFont, QDesktopServices, QResizeEvent, QShowEvent
 import pyqtgraph as pg
 
 from instrument_profiles import CategoryProfile, ModelProfile, InputParameterSpec
-from instrument_drivers import create_driver_for_category, BaseCategoryDriver, MeasurementResult
+from instrument_drivers import create_driver_for_category, BaseCategoryDriver, MeasurementResult, OscilloscopeDriver
 from excel_exporter import export_session_to_excel
 from dialogs import PreStartConfirmDialog, ChecklistStepCard, get_available_screen_geometry
 from run_history import (
@@ -656,7 +656,23 @@ class CategoryWorkspacePanel(QWidget):
             self.sync_splitter_proportions()
 
     def _create_input_widget(self, spec: InputParameterSpec) -> QWidget:
-        if spec.param_type == "choice":
+        if spec.param_type == "multi_choice":
+            box = QWidget()
+            h_lay = QHBoxLayout(box)
+            h_lay.setContentsMargins(0, 0, 0, 0)
+            h_lay.setSpacing(6)
+            default_tokens = [t.strip().upper() for t in str(spec.default).split(",") if t.strip()]
+            cbs: List[QCheckBox] = []
+            for ch_name in spec.choices:
+                cb = QCheckBox(ch_name)
+                cb.setFont(QFont("Malgun Gothic", 8 if self.is_compact_screen else 9, QFont.Weight.Bold))
+                cb.setChecked(ch_name.upper() in default_tokens)
+                h_lay.addWidget(cb)
+                cbs.append(cb)
+            h_lay.addStretch()
+            box._multi_checkboxes = cbs  # type: ignore[attr-defined]
+            return box
+        elif spec.param_type == "choice":
             cmb = QComboBox()
             cmb.setMinimumWidth(90)
             cmb.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -705,7 +721,11 @@ class CategoryWorkspacePanel(QWidget):
             w = self.input_widgets.get(spec.key)
             if w is None:
                 continue
-            if isinstance(w, QComboBox):
+            if hasattr(w, "_multi_checkboxes"):
+                default_tokens = [t.strip().upper() for t in str(spec.default).split(",") if t.strip()]
+                for cb in getattr(w, "_multi_checkboxes"):
+                    cb.setChecked(cb.text().upper() in default_tokens and cb.isEnabled())
+            elif isinstance(w, QComboBox):
                 w.setCurrentText(str(spec.default))
             elif isinstance(w, QDoubleSpinBox):
                 w.setValue(float(spec.default))
@@ -734,6 +754,17 @@ class CategoryWorkspacePanel(QWidget):
         ) + "</ul>"
         self.lbl_remote_notes.setText(notes_html)
         self.visa_mgr.set_category_model(self.profile.folder_id, model.model_id)
+        # Enable/disable multi-channel checkboxes based on model.max_channels (e.g., 2CH vs 4CH scopes)
+        ch_w = self.input_widgets.get("channel")
+        if ch_w is not None and hasattr(ch_w, "_multi_checkboxes"):
+            cbs: List[QCheckBox] = getattr(ch_w, "_multi_checkboxes")
+            for i_cb, cb in enumerate(cbs):
+                allowed = (i_cb + 1) <= model.max_channels
+                cb.setEnabled(allowed)
+                if not allowed and cb.isChecked():
+                    cb.setChecked(False)
+            if not any(cb.isChecked() for cb in cbs if cb.isEnabled()) and cbs:
+                cbs[0].setChecked(True)
 
     def _open_current_manual_pdf(self):
         model = self.get_current_model()
@@ -781,7 +812,15 @@ class CategoryWorkspacePanel(QWidget):
         result: Dict[str, Any] = {}
         for spec in self.profile.input_parameters:
             w = self.input_widgets.get(spec.key)
-            if isinstance(w, QComboBox):
+            if w is not None and hasattr(w, "_multi_checkboxes"):
+                checked_list = [cb.text() for cb in getattr(w, "_multi_checkboxes") if cb.isChecked() and cb.isEnabled()]
+                if not checked_list:
+                    cbs = getattr(w, "_multi_checkboxes")
+                    if cbs:
+                        cbs[0].setChecked(True)
+                        checked_list = [cbs[0].text()]
+                result[spec.key] = ", ".join(checked_list)
+            elif isinstance(w, QComboBox):
                 result[spec.key] = w.currentText()
             elif isinstance(w, QDoubleSpinBox):
                 result[spec.key] = float(w.value())
@@ -845,9 +884,23 @@ class CategoryWorkspacePanel(QWidget):
 
         # Setup table columns for current measurement session
         self.clear_session_data()
-        headers = ["Step", "Timestamp", "Elapsed (s)"] + [
-            m.label for m in self.profile.measurable_items if m.key in selected_meas
-        ]
+        scope_channels = (
+            OscilloscopeDriver.parse_selected_channels(inputs.get("channel", "CH1"))
+            if self.profile.folder_id == "04_OSCILLOSCOPE"
+            else []
+        )
+        if len(scope_channels) > 1:
+            meas_cols = [
+                f"[{ch}] {m.label}"
+                for m in self.profile.measurable_items
+                if m.key in selected_meas
+                for ch in scope_channels
+            ]
+        else:
+            meas_cols = [
+                m.label for m in self.profile.measurable_items if m.key in selected_meas
+            ]
+        headers = ["Step", "Timestamp", "Elapsed (s)"] + meas_cols
         self._apply_table_headers(headers)
 
         # Initialize driver and start acquisition timer
@@ -1088,18 +1141,36 @@ class CategoryWorkspacePanel(QWidget):
             "Timestamp": res.timestamp_str,
             "Elapsed (s)": res.elapsed_s,
         }
-        for m_spec in self.profile.measurable_items:
-            if m_spec.key in selected_meas:
-                row_dict[m_spec.label] = res.scalars.get(m_spec.key, "")
+        scope_channels = (
+            OscilloscopeDriver.parse_selected_channels(inputs.get("channel", "CH1"))
+            if self.profile.folder_id == "04_OSCILLOSCOPE"
+            else []
+        )
+        if len(scope_channels) > 1:
+            for m_spec in self.profile.measurable_items:
+                if m_spec.key in selected_meas:
+                    for ch in scope_channels:
+                        row_dict[f"[{ch}] {m_spec.label}"] = res.scalars.get(
+                            f"{m_spec.key}_{ch}", res.scalars.get(m_spec.key, "")
+                        )
+        else:
+            for m_spec in self.profile.measurable_items:
+                if m_spec.key in selected_meas:
+                    row_dict[m_spec.label] = res.scalars.get(m_spec.key, "")
         self.measured_rows.append(row_dict)
         self.lbl_sample_count.setText(f"누적 샘플: {len(self.measured_rows)} pts")
+
+        # Refresh table headers dynamically if user toggled additional channels mid-run
+        cur_keys = list(row_dict.keys())
+        if cur_keys != self._table_headers:
+            self._apply_table_headers(cur_keys)
 
         # Append row to GUI table
         self.data_table.setUpdatesEnabled(False)
         try:
             r_pos = self.data_table.rowCount()
             self.data_table.insertRow(r_pos)
-            for c_idx, col_key in enumerate(row_dict.keys()):
+            for c_idx, col_key in enumerate(cur_keys):
                 item = QTableWidgetItem(str(row_dict[col_key]))
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.data_table.setItem(r_pos, c_idx, item)
@@ -1114,9 +1185,10 @@ class CategoryWorkspacePanel(QWidget):
         for s_name, s_val in res.primary_plot_y.items():
             self.series_history.setdefault(s_name, []).append(float(s_val))
 
-        if res.waveform_x is not None and res.waveform_y is not None:
+        if res.waveform_x is not None and (res.waveform_y is not None or bool(res.waveform_multi_y)):
             self.last_waveform_x = res.waveform_x
             self.last_waveform_y = res.waveform_y
+            self.live_run.waveform_multi_y = dict(res.waveform_multi_y)
             self.last_wfm_x_label = res.waveform_x_label
             self.last_wfm_y_label = res.waveform_y_label
 
@@ -1201,6 +1273,7 @@ class CategoryWorkspacePanel(QWidget):
                 last_waveform_y=self.last_waveform_y,
                 waveform_x_label=self.last_wfm_x_label,
                 waveform_y_label=self.last_wfm_y_label,
+                last_waveform_multi_y=self.live_run.waveform_multi_y,
             )
             self.status_message_signal.emit(f"Excel 저장 완료: {saved_path}")
             QMessageBox.information(

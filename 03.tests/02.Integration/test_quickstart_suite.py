@@ -212,11 +212,40 @@ class TestTekQuickStartSuite(unittest.TestCase):
             panel.column_aliases.clear()
             panel.hidden_columns.clear()
 
-        # Auto export produced xlsx + csv + png for each run
+                # Auto export produced xlsx + csv + png for each run
         files = os.listdir(out_dir)
         self.assertTrue(any(f.endswith(".xlsx") for f in files), files)
         self.assertTrue(any(f.endswith(".csv") for f in files), files)
         self.assertTrue(any(f.endswith(".png") and os.path.getsize(os.path.join(out_dir, f)) > 1000 for f in files), files)
+
+        # Verify multi-channel oscilloscope simultaneous selection (CH1, CH2, CH3)
+        win.category_tabs.setCurrentIndex(3)
+        scope_panel = win.category_tabs.currentWidget()
+        ch_w = scope_panel.input_widgets.get("channel")
+        self.assertIsNotNone(ch_w)
+        self.assertTrue(hasattr(ch_w, "_multi_checkboxes"))
+        cbs = getattr(ch_w, "_multi_checkboxes")
+        for idx_cb, cb in enumerate(cbs):
+            cb.setChecked(idx_cb in (0, 1, 2))  # Select CH1, CH2, CH3
+        scope_inputs = scope_panel.collect_inputs()
+        self.assertEqual(scope_inputs["channel"], "CH1, CH2, CH3")
+
+        scope_panel.clear_session_data()
+        sel_meas = scope_panel.collect_selected_measurables()
+        scope_model = scope_panel.get_current_model()
+        scope_panel.driver = create_driver_for_category(win.visa_mgr, scope_panel.profile.folder_id, scope_model.model_id)
+        scope_run = scope_panel.begin_new_run(scope_model, scope_inputs, sel_meas)
+        scope_panel.driver.configure_and_start(scope_inputs, sel_meas)
+        scope_panel._set_state(scope_panel.STATE_RUNNING)
+        scope_panel._on_measurement_tick()
+        scope_panel.on_stop_clicked()
+        self.assertEqual(len(scope_run.waveform_multi_y), 3)
+        self.assertIn("CH1 Voltage (V)", scope_run.waveform_multi_y)
+        self.assertIn("CH2 Voltage (V)", scope_run.waveform_multi_y)
+        self.assertIn("CH3 Voltage (V)", scope_run.waveform_multi_y)
+        plot_names = [it.name() for it in scope_panel.primary_plot.getPlotItem().listDataItems()]
+        self.assertEqual(len(plot_names), 3, plot_names)
+
         win.close()
 
 
