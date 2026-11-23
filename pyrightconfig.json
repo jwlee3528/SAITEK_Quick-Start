@@ -1,0 +1,41 @@
+{
+  "include": [
+    "02.src",
+    "03.tests",
+    "04.tools",
+    "run_quickstart.py"
+  ],
+  "exclude": [
+    "06.Release",
+    "build_temp",
+    "**/__pycache__"
+  ],
+  "extraPaths": [
+    "02.src/01.Core",
+    "02.src/02.Modules",
+    "02.src/03.Drivers",
+    "02.src/04.Utils",
+    "02.src/05.Config",
+    "02.src/06.Main",
+    "C:/Users/jwlee/AppData/Roaming/uv/python/cpython-3.14.5-windows-x86_64-none/Lib/site-packages"
+  ],
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": [
+        "02.src/01.Core",
+        "02.src/02.Modules",
+        "02.src/03.Drivers",
+        "02.src/04.Utils",
+        "02.src/05.Config",
+        "02.src/06.Main",
+        "C:/Users/jwlee/AppData/Roaming/uv/python/cpython-3.14.5-windows-x86_64-none/Lib/site-packages"
+      ]
+    }
+  ],
+  "pythonVersion": "3.14",
+  "pythonPlatform": "Windows",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning",
+  "reportMissingModuleSource": "none"
+}
