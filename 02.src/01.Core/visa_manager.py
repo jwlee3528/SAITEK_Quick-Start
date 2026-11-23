@@ -357,7 +357,7 @@ class VirtualInstrumentSimulator:
         if ("TRAC:DATA?" in cu or "TRACE:DATA?" in cu) and self.category_id == "08_DMM":
             return self._simulate_dmm_waveform_csv()
         if self.category_id == "08_DMM" and (
-            cu in ("READ?", ":READ?", "FETC?", ":FETC?", "FETCH?", ":FETCH?")
+            cu.startswith(("READ", ":READ", "FETC", ":FETC"))
             or "MEAS" in cu
         ):
             return f"{self._simulate_dmm_scalar(cu):.7f}"
@@ -615,6 +615,7 @@ class VisaConnectionManager:
         self.is_simulation = True
         self.simulator = VirtualInstrumentSimulator()
         self.transcript: List[IOTranscriptEntry] = []
+        self.total_logged_count: int = 0
         self._init_resource_manager()
 
     def _init_resource_manager(self):
@@ -798,5 +799,6 @@ class VisaConnectionManager:
             latency_ms=round(latency_ms, 2),
         )
         self.transcript.append(entry)
+        self.total_logged_count += 1
         if len(self.transcript) > 1000:
             self.transcript = self.transcript[-1000:]

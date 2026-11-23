@@ -283,18 +283,23 @@ class TekQuickStartMainWindow(QMainWindow):
 
         con_layout.addLayout(cmd_bar)
 
+        self._last_io_count: int = 0
         self.io_table = QTableWidget(0, 5)
         self.io_table.setHorizontalHeaderLabels(["시각 (Time)", "구분 (Dir)", "리소스 (Resource)", "전송 명령 (Command)", "수신 응답 (Response & Latency)"])
         h_io = self.io_table.horizontalHeader()
         if h_io is not None:
-            h_io.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-            h_io.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-            h_io.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+            h_io.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+            h_io.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+            h_io.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
             h_io.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
             h_io.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
+            self.io_table.setColumnWidth(0, 100)
+            self.io_table.setColumnWidth(1, 75)
+            self.io_table.setColumnWidth(2, 260)
         v_io = self.io_table.verticalHeader()
         if v_io is not None:
             v_io.setVisible(False)
+            v_io.setDefaultSectionSize(22)
         self.io_table.setMinimumHeight(60)
         con_layout.addWidget(self.io_table)
 
@@ -454,25 +459,56 @@ class TekQuickStartMainWindow(QMainWindow):
 
     def _clear_io_console(self):
         self.visa_mgr.transcript.clear()
+        self._last_io_count = 0
         self.io_table.setRowCount(0)
 
     def _refresh_io_console(self):
-        entries = self.visa_mgr.transcript[-80:]
-        self.io_table.setRowCount(len(entries))
-        for r, e in enumerate(entries):
-            self.io_table.setItem(r, 0, QTableWidgetItem(e.timestamp))
-            dir_item = QTableWidgetItem(e.direction)
-            if e.direction == "ERROR":
-                dir_item.setForeground(QColor("#dc2626"))
-            elif e.direction == "QUERY":
-                dir_item.setForeground(QColor("#0284c7"))
-            elif e.direction == "WRITE":
-                dir_item.setForeground(QColor("#16a34a"))
-            self.io_table.setItem(r, 1, dir_item)
-            self.io_table.setItem(r, 2, QTableWidgetItem(e.resource))
-            self.io_table.setItem(r, 3, QTableWidgetItem(e.command))
-            self.io_table.setItem(r, 4, QTableWidgetItem(f"{e.response} ({e.latency_ms} ms)"))
+        total = self.visa_mgr.total_logged_count
+        entries = self.visa_mgr.transcript
+        if not entries:
+            self._last_io_count = 0
+            self.io_table.setRowCount(0)
+            return
+
+        new_cnt = total - self._last_io_count
+        if new_cnt <= 0:
+            return
+
+        max_rows = 80
+        self.io_table.setUpdatesEnabled(False)
+        try:
+            # Fast incremental append when only a few entries were added
+            if 0 < new_cnt <= 20 and self.io_table.rowCount() > 0:
+                to_add = entries[-new_cnt:]
+                for e in to_add:
+                    if self.io_table.rowCount() >= max_rows:
+                        self.io_table.removeRow(0)
+                    r = self.io_table.rowCount()
+                    self.io_table.insertRow(r)
+                    self._set_io_row(r, e)
+            else:
+                tail = entries[-max_rows:]
+                self.io_table.setRowCount(len(tail))
+                for r, e in enumerate(tail):
+                    self._set_io_row(r, e)
+            self._last_io_count = total
+        finally:
+            self.io_table.setUpdatesEnabled(True)
         self.io_table.scrollToBottom()
+
+    def _set_io_row(self, r: int, e) -> None:
+        self.io_table.setItem(r, 0, QTableWidgetItem(e.timestamp))
+        dir_item = QTableWidgetItem(e.direction)
+        if e.direction == "ERROR":
+            dir_item.setForeground(QColor("#dc2626"))
+        elif e.direction == "QUERY":
+            dir_item.setForeground(QColor("#0284c7"))
+        elif e.direction == "WRITE":
+            dir_item.setForeground(QColor("#16a34a"))
+        self.io_table.setItem(r, 1, dir_item)
+        self.io_table.setItem(r, 2, QTableWidgetItem(e.resource))
+        self.io_table.setItem(r, 3, QTableWidgetItem(e.command))
+        self.io_table.setItem(r, 4, QTableWidgetItem(f"{e.response} ({e.latency_ms} ms)"))
 
     def _show_status_message(self, msg: str):
         self.status_bar.showMessage(msg)

@@ -589,6 +589,9 @@ class CategoryWorkspacePanel(QWidget):
         self.data_table = QTableWidget(0, 5)
         self.data_table.setMinimumHeight(80)
         self.data_table.setAlternatingRowColors(True)
+        v_dt = self.data_table.verticalHeader()
+        if v_dt is not None:
+            v_dt.setDefaultSectionSize(22)
         h_dt = self.data_table.horizontalHeader()
         if h_dt is not None:
             h_dt.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -669,7 +672,15 @@ class CategoryWorkspacePanel(QWidget):
             sp.setDecimals(6 if (spec.min_val is not None and spec.min_val < 0.001) else 3)
             sp.setMinimum(spec.min_val if spec.min_val is not None else -1e9)
             sp.setMaximum(spec.max_val if spec.max_val is not None else 1e9)
-            sp.setValue(float(spec.default))
+            def_f = float(spec.default)
+            if spec.key == "poll_interval_s":
+                sp.setSingleStep(0.05)
+                sp.valueChanged.connect(self._on_poll_interval_spin_changed)
+            elif spec.key == "nplc":
+                sp.setSingleStep(0.1)
+            elif 0 < abs(def_f) < 1.0:
+                sp.setSingleStep(0.05)
+            sp.setValue(def_f)
             return sp
         elif spec.param_type == "int":
             sp = QSpinBox()
@@ -853,9 +864,15 @@ class CategoryWorkspacePanel(QWidget):
             return
 
         poll_s = float(inputs.get("poll_interval_s", 0.5))
-        self.timer.start(max(50, int(poll_s * 1000)))
+        self.timer.start(max(15, int(poll_s * 1000)))
         self._set_state(self.STATE_RUNNING)
         self._on_measurement_tick()
+
+    def _on_poll_interval_spin_changed(self, new_val: float):
+        """Updates the acquisition timer immediately when the user changes poll_interval_s while running."""
+        target_ms = max(15, int(float(new_val) * 1000))
+        if self.timer.isActive() and self.timer.interval() != target_ms:
+            self.timer.setInterval(target_ms)
 
     # =========================================================================
     # RUN HISTORY / COLUMN CUSTOMISATION / EXPORT OPTIONS
@@ -1047,6 +1064,9 @@ class CategoryWorkspacePanel(QWidget):
         if self.driver is None or self.state != self.STATE_RUNNING:
             return
         inputs = self.collect_inputs()
+        target_ms = max(15, int(float(inputs.get("poll_interval_s", 0.5)) * 1000))
+        if self.timer.interval() != target_ms:
+            self.timer.setInterval(target_ms)
         selected_meas = self.collect_selected_measurables()
         try:
             res: MeasurementResult = self.driver.acquire_step(inputs, selected_meas)
@@ -1075,12 +1095,16 @@ class CategoryWorkspacePanel(QWidget):
         self.lbl_sample_count.setText(f"누적 샘플: {len(self.measured_rows)} pts")
 
         # Append row to GUI table
-        r_pos = self.data_table.rowCount()
-        self.data_table.insertRow(r_pos)
-        for c_idx, col_key in enumerate(row_dict.keys()):
-            item = QTableWidgetItem(str(row_dict[col_key]))
-            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.data_table.setItem(r_pos, c_idx, item)
+        self.data_table.setUpdatesEnabled(False)
+        try:
+            r_pos = self.data_table.rowCount()
+            self.data_table.insertRow(r_pos)
+            for c_idx, col_key in enumerate(row_dict.keys()):
+                item = QTableWidgetItem(str(row_dict[col_key]))
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.data_table.setItem(r_pos, c_idx, item)
+        finally:
+            self.data_table.setUpdatesEnabled(True)
         self.data_table.scrollToBottom()
 
         # Store time-series & waveform history

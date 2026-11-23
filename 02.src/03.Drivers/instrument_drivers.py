@@ -853,6 +853,8 @@ class DMMDriver(BaseCategoryDriver):
         self.reading_buffer: List[float] = []
         self.scpi_func = "VOLTage:DC"
         self.unit_label = "V"
+        self.cached_terminals = "FRON"
+        self._applied_cfg: Dict[str, Any] = {}
 
     def _determine_lang(self, inputs: Dict[str, Any]) -> str:
         if self.model_id in ("DMM_2110", "DMM_2010"):
@@ -892,26 +894,24 @@ class DMMDriver(BaseCategoryDriver):
             return "DIGitize:VOLTage", "dmm.FUNC_DIGITIZE_VOLTAGE", "V"
         return "VOLTage:DC", "dmm.FUNC_DC_VOLTAGE", "V"
 
-    def configure_and_start(self, inputs: Dict[str, Any], selected_meas: List[str]):
-        super().configure_and_start(inputs, selected_meas)
-        self.reading_buffer.clear()
-        self.active_lang = self._determine_lang(inputs)
+    def _apply_dmm_settings(self, inputs: Dict[str, Any], full_reset: bool = False):
         scpi_fn, tsp_fn, unit_lbl = self._parse_func_selection(str(inputs.get("dmm_func", "VOLT:DC")))
         self.scpi_func = scpi_fn
         self.unit_label = unit_lbl
 
         rng = float(inputs.get("meas_range", 0.0))
-        nplc = float(inputs.get("nplc", 1.0))
-        az_choice = str(inputs.get("auto_zero", "ON"))
-        lsync = bool(inputs.get("line_sync", True))
+        nplc = float(inputs.get("nplc", 0.1))
+        az_choice = str(inputs.get("auto_zero", "ONCE"))
+        lsync = bool(inputs.get("line_sync", False))
         avg_choice = str(inputs.get("avg_filter", "OFF"))
         ocomp = bool(inputs.get("offset_comp", False))
         dig_rate = int(inputs.get("digitize_rate", 100000))
-        dig_cnt = int(inputs.get("digitize_count", 200))
+        dig_cnt = max(10, int(inputs.get("digitize_count", 200)))
 
         if self.active_lang == "SCPI":
-            self.visa.write("*RST")
-            self.visa.write("*CLS")
+            if full_reset:
+                self.visa.write("*RST")
+                self.visa.write("*CLS")
             if scpi_fn.startswith("DIGitize"):
                 self.visa.write(':SENSe:DIGitize:FUNCtion "VOLTage"')
                 self.visa.write(f":SENSe:DIGitize:VOLTage:SRATe {dig_rate}")
@@ -928,9 +928,17 @@ class DMMDriver(BaseCategoryDriver):
                     self.visa.write(f":SENSe:{scpi_fn}:RANGe {rng}")
                 if scpi_fn in ("VOLTage:DC", "CURRent:DC", "RESistance", "FRESistance", "TEMPerature"):
                     self.visa.write(f":SENSe:{scpi_fn}:NPLCycles {nplc}")
-                    az_scpi = "OFF" if "OFF" in az_choice else ("ONCE" if "ONCE" in az_choice else "ON")
-                    self.visa.write(f":SENSe:{scpi_fn}:AZERo {az_scpi}")
-                    if self.model_id in ("DMM6500", "DMM7510", "DMM_2010"):
+                    if "ONCE" in az_choice.upper():
+                        self.visa.write(f":SENSe:{scpi_fn}:AZERo OFF")
+                        if self.model_id in ("DMM6500", "DMM7510"):
+                            self.visa.write(":SENSe:AZERo:ONCE")
+                    elif "OFF" in az_choice.upper():
+                        self.visa.write(f":SENSe:{scpi_fn}:AZERo OFF")
+                    else:
+                        self.visa.write(f":SENSe:{scpi_fn}:AZERo ON")
+                    if self.model_id in ("DMM6500", "DMM7510"):
+                        self.visa.write(f":SENSe:{scpi_fn}:LINE:SYNC {'ON' if lsync else 'OFF'}")
+                    elif self.model_id == "DMM_2010":
                         self.visa.write(f":SENSe:{scpi_fn}:LSYNc {'ON' if lsync else 'OFF'}")
                 if scpi_fn == "FRESistance" and ocomp:
                     self.visa.write(":SENSe:FRESistance:OCOMpensated ON")
@@ -939,10 +947,14 @@ class DMMDriver(BaseCategoryDriver):
                     self.visa.write(f":SENSe:{scpi_fn}:AVERage:TCONtrol {tcon}")
                     self.visa.write(f":SENSe:{scpi_fn}:AVERage:COUNt 10")
                     self.visa.write(f":SENSe:{scpi_fn}:AVERage:STATe ON")
-            self.visa.write(f":TRACe:POINts {dig_cnt}")
+                elif not full_reset:
+                    self.visa.write(f":SENSe:{scpi_fn}:AVERage:STATe OFF")
+            if self.model_id in ("DMM6500", "DMM7510") and full_reset:
+                self.visa.write(f':TRACe:POINts { max(dig_cnt, 1000) }, "defbuffer1"')
         else:
             # TSP mode (DMM6500 / DMM7510)
-            self.visa.write("reset()")
+            if full_reset:
+                self.visa.write("reset()")
             if scpi_fn.startswith("DIGitize"):
                 self.visa.write("dmm.digitize.func = dmm.FUNC_DIGITIZE_VOLTAGE")
                 self.visa.write(f"dmm.digitize.samplerate = {dig_rate}")
@@ -954,21 +966,54 @@ class DMMDriver(BaseCategoryDriver):
                 else:
                     self.visa.write(f"dmm.measure.range = {rng}")
                 self.visa.write(f"dmm.measure.nplc = {nplc}")
-                az_tsp = "dmm.OFF" if "OFF" in az_choice else "dmm.ON"
-                self.visa.write(f"dmm.measure.autozero = {az_tsp}")
+                if "ONCE" in az_choice.upper():
+                    self.visa.write("dmm.measure.autozero = dmm.OFF")
+                    self.visa.write("dmm.measure.autozero = dmm.ONCE")
+                elif "OFF" in az_choice.upper():
+                    self.visa.write("dmm.measure.autozero = dmm.OFF")
+                else:
+                    self.visa.write("dmm.measure.autozero = dmm.ON")
                 self.visa.write(f"dmm.measure.linesync = {'dmm.ON' if lsync else 'dmm.OFF'}")
                 if scpi_fn == "FRESistance" and ocomp:
                     self.visa.write("dmm.measure.offsetcompensation = dmm.OCOMP_ON")
 
+        self._applied_cfg = {
+            k: inputs.get(k)
+            for k in ("dmm_func", "meas_range", "nplc", "auto_zero", "line_sync", "avg_filter", "offset_comp", "digitize_rate", "digitize_count")
+        }
+
+    def configure_and_start(self, inputs: Dict[str, Any], selected_meas: List[str]):
+        super().configure_and_start(inputs, selected_meas)
+        self.reading_buffer.clear()
+        self.active_lang = self._determine_lang(inputs)
+        self._apply_dmm_settings(inputs, full_reset=True)
+        try:
+            if self.active_lang == "SCPI":
+                t_str, _ = self.visa.query(":ROUTe:TERMinals?")
+            else:
+                t_str, _ = self.visa.query("print(localnode.terminals)")
+            self.cached_terminals = t_str.strip() or "FRON"
+        except Exception:
+            self.cached_terminals = "FRON"
+        # Reset start_epoch AFTER *RST and initial config so Step 1 starts at 0.00s
+        self.start_epoch = time.time()
+
     def acquire_step(self, inputs: Dict[str, Any], selected_meas: List[str]) -> MeasurementResult:
+        # Dynamically apply any DMM parameter changes made by the user while running
+        cur_cfg = {
+            k: inputs.get(k)
+            for k in ("dmm_func", "meas_range", "nplc", "auto_zero", "line_sync", "avg_filter", "offset_comp", "digitize_rate", "digitize_count")
+        }
+        if self._applied_cfg and cur_cfg != self._applied_cfg:
+            self._apply_dmm_settings(inputs, full_reset=False)
+
         res = MeasurementResult()
-        res.elapsed_s = round(time.time() - self.start_epoch, 3)
         self.step_count += 1
         res.step_index = self.step_count
 
         if self.active_lang == "SCPI":
             if self.scpi_func.startswith("DIGitize"):
-                val_str, _ = self.visa.query(":MEASure:DIGitize:VOLTage?")
+                val_str, _ = self.visa.query(":READ:DIGitize?")
             elif self.model_id == "DMM_2110":
                 val_str, _ = self.visa.query(f"MEASure:{self.scpi_func}?")
             else:
@@ -978,6 +1023,8 @@ class DMMDriver(BaseCategoryDriver):
                 val_str, _ = self.visa.query("print(dmm.digitize.read())")
             else:
                 val_str, _ = self.visa.query("print(dmm.measure.read())")
+
+        res.elapsed_s = round(time.time() - self.start_epoch, 3)
 
         try:
             reading = float(val_str.split(",")[0].strip())
@@ -1002,27 +1049,39 @@ class DMMDriver(BaseCategoryDriver):
         if "reading_std" in selected_meas:
             res.scalars["reading_std"] = round(std_val, 7)
         if "active_terminals" in selected_meas:
-            if self.active_lang == "SCPI":
-                term_str, _ = self.visa.query(":ROUTe:TERMinals?")
-            else:
-                term_str, _ = self.visa.query("print(localnode.terminals)")
-            res.scalars["active_terminals"] = term_str.strip()
+            # Refresh physical front/rear switch only every 25 steps so normal steps need just 1 fast :READ? query
+            if self.step_count % 25 == 0:
+                try:
+                    if self.active_lang == "SCPI":
+                        term_str, _ = self.visa.query(":ROUTe:TERMinals?")
+                    else:
+                        term_str, _ = self.visa.query("print(localnode.terminals)")
+                    self.cached_terminals = term_str.strip() or self.cached_terminals
+                except Exception:
+                    pass
+            res.scalars["active_terminals"] = self.cached_terminals
 
         if "digitizer_trace" in selected_meas:
-            if self.active_lang == "SCPI":
-                tr_str, _ = self.visa.query(":TRACe:DATA?")
+            cnt = max(10, int(inputs.get("digitize_count", 200)))
+            if self.scpi_func.startswith("DIGitize"):
+                if self.active_lang == "SCPI":
+                    tr_str, _ = self.visa.query(f':TRACe:DATA? 1, {cnt}, "defbuffer1", READ')
+                else:
+                    tr_str, _ = self.visa.query(f"printbuffer(1, {cnt}, defbuffer1.readings)")
+                try:
+                    y_arr = np.array([float(x) for x in tr_str.split(",") if x.strip()], dtype=float)
+                except Exception:
+                    y_arr = arr[-cnt:].copy()
+                rate = max(1, int(inputs.get("digitize_rate", 100000)))
+                x_arr = np.arange(len(y_arr), dtype=float) * (1000.0 / rate)  # ms
+                res.waveform_x_label = "Sample Time (ms)"
             else:
-                cnt = int(inputs.get("digitize_count", 200))
-                tr_str, _ = self.visa.query(f"printbuffer(1, {cnt}, defbuffer1.readings)")
-            try:
-                y_arr = np.array([float(x) for x in tr_str.split(",") if x.strip()], dtype=float)
-            except Exception:
-                y_arr = arr.copy()
-            rate = max(1, int(inputs.get("digitize_rate", 100000)))
-            x_arr = np.arange(len(y_arr), dtype=float) * (1000.0 / rate)  # ms
+                # For standard DC/AC/Resistance meter modes, use in-memory rolling buffer (zero extra USB latency)
+                y_arr = arr[-cnt:].copy()
+                x_arr = np.arange(1, len(y_arr) + 1, dtype=float)
+                res.waveform_x_label = "Buffer Reading Index"
             res.waveform_x = x_arr
             res.waveform_y = y_arr
-            res.waveform_x_label = "Sample Time (ms)"
             res.waveform_y_label = f"Amplitude ({self.unit_label})"
             res.waveform_title = f"DMM Digitizer / Buffer Trace ({len(y_arr)} pts)"
             res.scalars["digitizer_trace"] = f"{len(y_arr)} samples"
@@ -1031,8 +1090,8 @@ class DMMDriver(BaseCategoryDriver):
 
     def stop_and_safe_shutdown(self, inputs: Dict[str, Any]):
         try:
-            if self.active_lang == "SCPI":
-                self.visa.write("ABORt")
+            if self.active_lang == "SCPI" and self.model_id in ("DMM6500", "DMM7510"):
+                self.visa.write(":ABORt")
         except Exception:
             pass
 
