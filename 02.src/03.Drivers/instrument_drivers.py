@@ -209,8 +209,11 @@ class DCPowerDriver(BaseCategoryDriver):
     Ref: 2220S-907-01B_Dec_2013_Prog.pdf, 2260B_Programming_Oct2024.pdf
     """
 
-    def configure_and_start(self, inputs: Dict[str, Any], selected_meas: List[str]):
-        super().configure_and_start(inputs, selected_meas)
+    def __init__(self, visa_mgr, category_id: str, model_id: str):
+        super().__init__(visa_mgr, category_id, model_id)
+        self._applied_cfg: Dict[str, Any] = {}
+
+    def _apply_psu_settings(self, inputs: Dict[str, Any], turn_output_on: bool = False):
         ch_sel = inputs.get("channel", "CH1")
         v_target = float(inputs.get("voltage_v", 5.0))
         i_lim = float(inputs.get("current_limit_a", 1.0))
@@ -233,7 +236,8 @@ class DCPowerDriver(BaseCategoryDriver):
             self.visa.write("SOURce:VOLTage:LIMit:STATe ON")
             self.visa.write(f"SOURce:VOLTage:LEVel:IMMediate:AMPLitude {v_target}")
             self.visa.write(f"SOURce:CURRent:LEVel:IMMediate:AMPLitude {i_lim}")
-            self.visa.write("OUTPut:STATe ON")
+            if turn_output_on:
+                self.visa.write("OUTPut:STATe ON")
         else:
             # 2260B Series
             mode_str = inputs.get("slew_priority", "CVHS")
@@ -249,11 +253,28 @@ class DCPowerDriver(BaseCategoryDriver):
                 self.visa.write(f":SOURce:RESistance {int_r}")
             self.visa.write(f":SOURce:VOLTage {v_target}")
             self.visa.write(f":SOURce:CURRent {i_lim}")
-            self.visa.write(":OUTPut:STATe:IMMediate ON")
+            if turn_output_on:
+                self.visa.write(":OUTPut:STATe:IMMediate ON")
+
+        self._applied_cfg = {
+            k: inputs.get(k)
+            for k in ("channel", "combine_mode", "voltage_v", "current_limit_a", "ovp_v", "ocp_enable", "slew_priority", "slew_rate_vs", "internal_res_ohm")
+        }
+
+    def configure_and_start(self, inputs: Dict[str, Any], selected_meas: List[str]):
+        super().configure_and_start(inputs, selected_meas)
+        self._apply_psu_settings(inputs, turn_output_on=True)
+        self.start_epoch = time.time()
 
     def acquire_step(self, inputs: Dict[str, Any], selected_meas: List[str]) -> MeasurementResult:
+        cur_cfg = {
+            k: inputs.get(k)
+            for k in ("channel", "combine_mode", "voltage_v", "current_limit_a", "ovp_v", "ocp_enable", "slew_priority", "slew_rate_vs", "internal_res_ohm")
+        }
+        if self._applied_cfg and cur_cfg != self._applied_cfg:
+            self._apply_psu_settings(inputs, turn_output_on=False)
+
         res = MeasurementResult()
-        res.elapsed_s = round(time.time() - self.start_epoch, 3)
         self.step_count += 1
         res.step_index = self.step_count
 
@@ -296,6 +317,7 @@ class DCPowerDriver(BaseCategoryDriver):
             st, _ = self.visa.query("OUTPut:STATe?")
             res.scalars["out_state"] = "ON" if st.strip() in ("1", "ON") else "OFF"
 
+        res.elapsed_s = round(time.time() - self.start_epoch, 3)
         return res
 
     def stop_and_safe_shutdown(self, inputs: Dict[str, Any]):

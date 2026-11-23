@@ -660,11 +660,11 @@ class VisaConnectionManager:
         read_term: str = "\n",
         write_term: str = "\n",
     ) -> Tuple[bool, str]:
-        self.disconnect()
         self.simulator = VirtualInstrumentSimulator(category_id, model_id)
         clean_res = resource_str.split(" (")[0].strip()
 
         if simulation or clean_res.startswith("SIM::"):
+            self.disconnect()
             self.is_simulation = True
             self.active_resource = clean_res
             idn = self.simulator.get_idn()
@@ -674,6 +674,22 @@ class VisaConnectionManager:
         if self.rm is None:
             return False, "VISA ResourceManager를 사용할 수 없습니다. TekVISA/NI-VISA를 설치하거나 시뮬레이션 모드를 사용하세요."
 
+        # Reuse existing open hardware session if already connected to the same resource
+        if (
+            not self.is_simulation
+            and self.session is not None
+            and self.active_resource == clean_res
+            and getattr(self.session, "_session", None) is not None
+        ):
+            try:
+                self.session.timeout = timeout_ms
+                self.session.read_termination = read_term
+                self.session.write_termination = write_term
+                return True, f"[실제 장비 연결 성공] {clean_res}"
+            except Exception:
+                pass
+
+        self.disconnect()
         try:
             t0 = time.perf_counter()
             sess: Any = self.rm.open_resource(clean_res)
@@ -690,13 +706,43 @@ class VisaConnectionManager:
             self._log("ERROR", clean_res, f"viOpen({clean_res})", str(e), 0.0)
             return False, f"VISA 연결 실패: {e}"
 
-    def disconnect(self):
-        if self.session is not None:
+    def _reopen_active_session(self) -> bool:
+        """Transparently re-opens the active hardware session if the VISA handle was invalidated (VI_ERROR_INV_OBJECT)."""
+        if self.is_simulation or not self.active_resource or self.rm is None:
+            return False
+        old_sess = self.session
+        self.session = None
+        if old_sess is not None:
             try:
-                self.session.close()
+                # Detach handle before deletion so old_sess.__del__ cannot close the newly allocated handle
+                old_sess._session = None
             except Exception:
                 pass
+        try:
+            t0 = time.perf_counter()
+            sess: Any = self.rm.open_resource(self.active_resource)
+            sess.timeout = 5000
+            sess.read_termination = "\n"
+            sess.write_termination = "\n"
+            self.session = sess
+            dt = (time.perf_counter() - t0) * 1000.0
+            self._log("INFO", self.active_resource, f"viOpen({self.active_resource}) [Auto-Reconnect]", "VI_SUCCESS", dt)
+            return True
+        except Exception:
+            return False
+
+    def disconnect(self):
+        if self.session is not None:
+            old_sess = self.session
             self.session = None
+            try:
+                old_sess.close()
+            except Exception:
+                pass
+            try:
+                old_sess._session = None
+            except Exception:
+                pass
         if self.active_resource:
             self._log("INFO", self.active_resource, "viClose()", "Session closed", 0.1)
         self.active_resource = ""
@@ -718,8 +764,15 @@ class VisaConnectionManager:
             self._log("WRITE", self.active_resource, command, "VI_SUCCESS", dt)
             return dt
         except Exception as e:
+            err_s = str(e)
+            if ("VI_ERROR_INV_OBJECT" in err_s or "VI_ERROR_INV_SESSION" in err_s or "InvalidSession" in err_s) and self._reopen_active_session():
+                t0 = time.perf_counter()
+                self.session.write(command)
+                dt = (time.perf_counter() - t0) * 1000.0
+                self._log("WRITE", self.active_resource, command, "VI_SUCCESS", dt)
+                return dt
             dt = (time.perf_counter() - t0) * 1000.0
-            self._log("ERROR", self.active_resource, f"WRITE: {command}", str(e), dt)
+            self._log("ERROR", self.active_resource, f"WRITE: {command}", err_s, dt)
             raise
 
     def query(self, command: str) -> Tuple[str, float]:
@@ -735,8 +788,15 @@ class VisaConnectionManager:
             self._log("QUERY", self.active_resource, command, resp[:180], dt)
             return resp, dt
         except Exception as e:
+            err_s = str(e)
+            if ("VI_ERROR_INV_OBJECT" in err_s or "VI_ERROR_INV_SESSION" in err_s or "InvalidSession" in err_s) and self._reopen_active_session():
+                t0 = time.perf_counter()
+                resp = self.session.query(command).strip()
+                dt = (time.perf_counter() - t0) * 1000.0
+                self._log("QUERY", self.active_resource, command, resp[:180], dt)
+                return resp, dt
             dt = (time.perf_counter() - t0) * 1000.0
-            self._log("ERROR", self.active_resource, f"QUERY: {command}", str(e), dt)
+            self._log("ERROR", self.active_resource, f"QUERY: {command}", err_s, dt)
             raise
 
     def read(self) -> Tuple[str, float]:
@@ -752,8 +812,15 @@ class VisaConnectionManager:
             self._log("READ", self.active_resource, "viRead()", resp[:180], dt)
             return resp, dt
         except Exception as e:
+            err_s = str(e)
+            if ("VI_ERROR_INV_OBJECT" in err_s or "VI_ERROR_INV_SESSION" in err_s or "InvalidSession" in err_s) and self._reopen_active_session():
+                t0 = time.perf_counter()
+                resp = self.session.read().strip()
+                dt = (time.perf_counter() - t0) * 1000.0
+                self._log("READ", self.active_resource, "viRead()", resp[:180], dt)
+                return resp, dt
             dt = (time.perf_counter() - t0) * 1000.0
-            self._log("ERROR", self.active_resource, "viRead()", str(e), dt)
+            self._log("ERROR", self.active_resource, "viRead()", err_s, dt)
             raise
 
     def verify_instrument_status(self, protocol: str = "SCPI", password: str = "") -> Dict[str, str]:
