@@ -126,6 +126,73 @@ def annotate_image_ratio(
     return src_png
 
 
+def create_beginner_guide_popup_image(item_spec: Any, model_name: str, out_path: str) -> str:
+    """Renders a high-res visual capture of the [📘 초보자 연결 가이드 보기] popup dialog."""
+    w, h = 980, 580
+    img = Image.new("RGB", (w, h), (248, 250, 252))
+    draw = ImageDraw.Draw(img)
+
+    f_title = get_pil_font(19, bold=True)
+    f_sec = get_pil_font(15, bold=True)
+    f_body = get_pil_font(13, bold=False)
+    f_bold = get_pil_font(13, bold=True)
+
+    # Window Title Bar
+    draw.rectangle([0, 0, w, 38], fill=(11, 37, 69))
+    draw.text((16, 8), "★ 초보자 장비 연결 및 설정 가이드 팝업 ([초보자 연결 가이드 보기] 클릭 시 표시)", fill=(255, 255, 255), font=f_sec)
+
+    # Top item header box
+    draw.rounded_rectangle([18, 52, w - 18, 138], radius=8, fill=(239, 246, 255), outline=(59, 130, 246), width=2)
+    draw.text((32, 62), f"▶ {item_spec.title}", fill=(29, 78, 216), font=f_title)
+    draw.text((32, 96), f"• 대상 모델: {model_name}\n• 핵심 설명: {item_spec.description}", fill=(30, 58, 138), font=f_body)
+
+    # Step-by-step instructions box
+    draw.rounded_rectangle([18, 152, w - 18, 435], radius=8, fill=(255, 255, 255), outline=(203, 213, 225), width=2)
+    draw.rectangle([18, 152, 26, 435], fill=(2, 132, 199))
+    draw.text((38, 164), "▶ 초보자 따라하기 순서 (장비 케이블 연결 및 전면 패널 메뉴 조작법):", fill=(3, 105, 161), font=f_sec)
+
+    cy = 198
+    steps = getattr(item_spec, "how_to_steps", [])
+    for s in steps:
+        # Wrap long lines neatly
+        line_chunks = [s[i:i + 74] for i in range(0, len(s), 74)]
+        for c_idx, chunk in enumerate(line_chunks):
+            prefix = "   " if c_idx > 0 else ""
+            draw.text((42, cy), prefix + chunk, fill=(15, 23, 42), font=f_body)
+            cy += 24
+        cy += 8
+
+    # Bottom verification command & expected result box
+    draw.rounded_rectangle([18, 448, w - 18, 525], radius=8, fill=(220, 252, 231), outline=(74, 222, 128), width=2)
+    draw.text(
+        (34, 458),
+        f"▶ 자동 검증 명령어 (Verify Command):  {item_spec.verify_cmd}",
+        fill=(22, 101, 52),
+        font=f_bold,
+    )
+    draw.text(
+        (34, 486),
+        f"✔ 정상 연결 시 기대 응답 (Expected Result):  {item_spec.expected_hint}",
+        fill=(22, 101, 52),
+        font=f_body,
+    )
+
+    # OK Button
+    draw.rounded_rectangle([w - 150, 534, w - 18, 570], radius=6, fill=(2, 132, 199))
+    draw.text((w - 114, 543), "확인 (OK)", fill=(255, 255, 255), font=f_bold)
+
+    img.save(out_path, "PNG")
+    annotate_image_ratio(
+        out_path,
+        [
+            (1, (0.018, 0.09, 0.982, 0.24), "점검 단계 제목 및 왜 이 설정이 필요한지 초보자 눈높이 설명"),
+            (2, (0.018, 0.265, 0.982, 0.75), "1단계 ~ 4단계 따라하기 순서 (케이블 포트 위치 & 장비 버튼 조작 순서)"),
+            (3, (0.018, 0.775, 0.982, 0.905), "[단계별 확인] 버튼 클릭 시 전송되는 검증 명령어와 정상 응답 기준"),
+        ],
+    )
+    return out_path
+
+
 def create_installer_preview_image(out_path: str) -> str:
     """Renders a high-res visual mockup of the TekQuickStart_Setup.exe GUI Wizard with annotations."""
     w, h = 960, 620
@@ -315,21 +382,17 @@ def capture_all_gui_screenshots() -> Dict[str, str]:
         os.path.join(SCREENSHOT_DIR, "01_installer_wizard.png")
     )
 
-    # 2. Startup Readiness Wizard Dialog
+    # 2. Startup Readiness Wizard Dialog (Tall 1180x940 capture so STEP 1, STEP 2, STEP 3 cards are fully visible)
     visa_mgr = VisaConnectionManager()
-    visa_mgr.connect("SIM::SCOPE_MSO54::INSTR", simulation=True, category_id=cat_keys[3], model_id="MSO54")
+    visa_mgr.connect("SIM::SCOPE_MSO54::INSTR", simulation=True, category_id=cat_keys[3], model_id="MSO_4_5_6")
 
     startup_dlg = StartupReadinessDialog(
         visa_mgr=visa_mgr,
         category_profiles=CATEGORY_PROFILES,
         initial_category_id=cat_keys[3],
     )
-    startup_dlg.resize(1120, 740)
+    startup_dlg.resize(1180, 940)
     startup_dlg.show()
-    QApplication.processEvents()
-
-    if startup_dlg.step_cards:
-        startup_dlg.step_cards[0].run_single_verification()
     QApplication.processEvents()
 
     p_startup = os.path.join(SCREENSHOT_DIR, "02_startup_readiness_wizard.png")
@@ -337,15 +400,15 @@ def capture_all_gui_screenshots() -> Dict[str, str]:
     annotate_image_ratio(
         p_startup,
         [
-            (1, (0.01, 0.195, 0.99, 0.435), "STEP 1: 연결할 장비 폴더(01~07)와 세부 모델 선택 + [매뉴얼 열기]"),
-            (2, (0.01, 0.465, 0.99, 0.645), "STEP 2: VISA 통신 포트 연결 테스트 또는 [가상 시뮬레이션 모드] 선택"),
-            (3, (0.01, 0.665, 0.99, 0.905), "STEP 3: 초보자용 단계별 따라하기 점검 카드 & 항목별 [즉시 확인] 버튼"),
-            (4, (0.735, 0.925, 0.99, 0.988), "STEP 4: [선택한 장비 화면으로 이동하여 측정 시작하기] 클릭"),
+            (1, (0.01, 0.105, 0.99, 0.345), "STEP 1: 장비 분류(8개 폴더) & 세부 장비 모델 선택 + [선택 모델 PDF 매뉴얼 열기]"),
+            (2, (0.01, 0.358, 0.99, 0.515), "STEP 2: 통신 포트 선택 / [가상 장비 시뮬레이션 모드] 체크 / [장비 연결 및 *IDN? 응답 확인]"),
+            (3, (0.01, 0.528, 0.99, 0.915), "STEP 3: 초보자용 단계별 연결 점검표 ([초보자 따라하기 가이드] & 우측 [단계별 확인] 버튼)"),
+            (4, (0.725, 0.935, 0.99, 0.992), "STEP 4: [선택한 장비 화면으로 이동하여 측정 시작하기] 클릭"),
         ],
     )
     paths["startup_wizard"] = p_startup
 
-    # Also capture a verified view of the beginner step cards
+    # Also capture a verified view of the beginner step cards after clicking [⚡ 모든 항목 한 번에 자동 점검 & 체크하기]
     startup_dlg.verify_all_steps()
     startup_dlg._check_all_manually()
     QApplication.processEvents()
@@ -354,12 +417,20 @@ def capture_all_gui_screenshots() -> Dict[str, str]:
     annotate_image_ratio(
         p_startup_verified,
         [
-            (1, (0.025, 0.745, 0.79, 0.895), "1) [초보자 따라하기 가이드] 확인 후 케이블 및 장비 화면 설정"),
-            (2, (0.805, 0.765, 0.965, 0.81), "2) 우측 [1단계 확인] 클릭 -> 실시간 장비 통신 검증"),
-            (3, (0.81, 0.70, 0.985, 0.742), "3) [모든 항목 한 번에 자동 점검 & 체크하기] 원클릭 지원"),
+            (1, (0.018, 0.462, 0.982, 0.508), "1) STEP 2 연결 성공 배너: 응답 시간(ms)과 장비 *IDN? 식별 문자열 즉시 표시"),
+            (2, (0.805, 0.555, 0.985, 0.595), "2) [모든 항목 한 번에 자동 점검 & 체크하기] 또는 각 카드 우측 [단계별 확인] 클릭"),
+            (3, (0.025, 0.605, 0.972, 0.895), "3) 카드 내부 [초보자 따라하기 가이드(1~4단계)] & 초록색 [확인 완료] 응답 결과 확인"),
         ],
     )
     paths["startup_verified"] = p_startup_verified
+
+    # Capture the detailed Beginner Connection Guide Popup ([📘 초보자 연결 가이드 보기])
+    sample_prof = CATEGORY_PROFILES[cat_keys[3]]
+    paths["beginner_guide_popup"] = create_beginner_guide_popup_image(
+        sample_prof.checklist[0],
+        sample_prof.models[0].display_name,
+        os.path.join(SCREENSHOT_DIR, "03b_beginner_guide_popup.png"),
+    )
     startup_dlg.close()
 
     # 3. Main Window Overview & Category Tabs
@@ -572,31 +643,45 @@ def get_guide_pages(screenshots: Dict[str, str]) -> List[Dict[str, Any]]:
         },
         {
             "page_no": 4,
-            "badge": "STEP 1 : 첫 실행 점검 마법사",
-            "title": "초보자용 사전 준비 및 장비 연결 점검 마법사 (1/2)",
-            "subtitle": "프로그램 실행 시 가장 먼저 나타나는 단계별 장비 연결 & 리모트 준비 점검 화면",
+            "badge": "STEP 1 : 첫 실행 연결 가이드 팝업 (1/3)",
+            "title": "프로그램 첫 시작 시 뜨는 [초보자용 장비-PC 연결 가이드 팝업창] 전체 구조",
+            "subtitle": "TekQuickStart.exe를 실행하면 가장 먼저 열리는 연결 마법사 팝업창의 4단계(STEP 1 ~ STEP 4) 구성 안내",
             "image": screenshots["startup_wizard"],
             "steps": [
-                ("[1] 장비 폴더 분류 & 장비 모델 선택", "• 마법사 상단에서 연결할 [장비 폴더 분류 (01.AFGs ~ 07.Tek VISA)]와 [세부 장비 모델]을 선택합니다.\n• 모델을 바꾸면 해당 장비에 꼭 맞는 케이블 연결법과 전면 패널 설정 점검 항목이 아래에 자동 표시됩니다."),
-                ("[2] 항목별 초보자 가이드 & 실시간 확인", "• 각 점검 카드는 '케이블 연결 → 장비 화면 설정 → 통신 상태 검증' 순서로 번호가 매겨져 있습니다.\n• 잘 모르는 항목은 [🔍 초보자용 따라하기 방법 보기/접기] 버튼을 눌러 상세 설명을 펼쳐 볼 수 있습니다."),
-                ("[3] 일괄 자동 점검 및 일괄 체크 기능", "• 하단의 [⚡ 전체 항목 일괄 자동 점검]을 누르면 모든 항목의 통신 상태를 한 번에 검사합니다.\n• 확인이 끝났다면 [☑ 모든 항목 일괄 체크 완료] 버튼을 눌러 빠르게 체크할 수 있습니다."),
-                ("[4] 메인 프로그램 시작", "• 우측 하단 [🚀 확인 완료 및 메인 프로그램 시작]을 클릭하면 선택한 장비 탭이 열린 상태로 메인 화면이 시작됩니다."),
+                ("[1] STEP 1. 연결할 장비 종류(8개 폴더)와 세부 모델 선택", "• ① 장비 분류(01.AFGs ~ 08.Digit Multimeter)와 ② 세부 장비 모델을 선택합니다.\n• 선택 즉시 아래 파란색 요약 박스에 해당 모델의 [지원 연결 인터페이스(USB/LAN/GPIB)], [채널 수], [매뉴얼 핵심 연결 안내]가 자동 표시되며, 우측 [📖 선택 모델 PDF 매뉴얼 열기]로 원본 매뉴얼을 바로 볼 수 있습니다."),
+                ("[2] STEP 2. PC와 장비 통신 포트 선택 및 연결 확인", "• 현재 감지된 VISA 엔진과 통신 포트(리소스) 목록을 보여줍니다. 케이블 연결 후 [🔄 포트 다시 찾기]로 검색합니다.\n• 실제 장비 없이 연습할 때는 보라색 [☑ 가상 장비 시뮬레이션 모드 사용]을 체크한 상태로 진행합니다."),
+                ("[3] STEP 3. 초보자용 단계별 연결 점검표 (스크롤 영역)", "• 선택한 장비 전용 점검 카드(1단계 케이블 연결 ~ 4단계 설정 확인)가 순서대로 나열됩니다.\n• 각 카드 안에는 파란색 [📘 초보자 따라하기 가이드 - 장비/PC 조작 순서]가 펼쳐져 있어 그대로 따라 할 수 있습니다."),
+                ("[4] 메인 측정 화면으로 이동", "• 점검이 끝나면 우측 하단 파란색 [🚀 선택한 장비 화면으로 이동하여 측정 시작하기]를 클릭해 메인 화면으로 진입합니다."),
             ],
-            "tip": "💡 메인 화면에 들어간 뒤에도 언제든 상단 툴바의 [📋 초보자용 연결 점검 마법사] 버튼을 눌러 이 창을 다시 열 수 있습니다.",
+            "tip": "💡 메인 화면에 들어간 뒤에도 언제든 상단 바의 파란색 [📋 사전 준비 점검표] 버튼을 누르면 이 연결 가이드 팝업창을 다시 열 수 있습니다.",
         },
         {
             "page_no": 5,
-            "badge": "STEP 1 심화 : 따라하기 & 실시간 검증",
-            "title": "초보자용 사전 준비 및 장비 연결 점검 마법사 (2/2)",
-            "subtitle": "아무것도 모르는 초보자가 각 점검 카드를 펼쳐 따라하고 장비 통신을 검증하는 방법",
+            "badge": "STEP 1 : 첫 실행 연결 가이드 팝업 (2/3)",
+            "title": "시작 팝업창에서 장비 연결 테스트 및 단계별 [확인] 버튼 실행하기",
+            "subtitle": "[📡 STEP 2: 장비 연결 및 *IDN? 응답 확인]과 [⚡ 모든 항목 한 번에 자동 점검]으로 통신 상태를 즉시 진단하는 방법",
             "image": screenshots["startup_verified"],
             "steps": [
-                ("[1] [🔍 초보자용 따라하기 방법 보기] 펼치기", "• 버튼을 클릭하면 파란색 안내 박스가 열리며 1단계~4단계로 '어느 포트에 무슨 케이블을 꽂는지', '장비 전면의 어떤 버튼을 눌러 설정하는지' 쉽게 설명해 줍니다."),
-                ("[2] [⚡ 이 항목 상태 지금 확인] 버튼 클릭", "• 설명대로 연결한 뒤 우측의 [⚡ 이 항목 상태 지금 확인] 버튼을 클릭합니다.\n• 프로그램이 장비에 확인 명령어(예: *IDN?, SYST:ERR?, *LANG?)를 자동으로 보내고 응답을 검사합니다."),
-                ("[3] 초록색 성공 메시지 & 자동 체크 확인", "• 연결이 정상이면 카드 하단이 초록색([✅ 통신 및 상태 확인 성공])으로 바뀌고 장비 응답값이 표시됩니다.\n• 동시에 해당 항목의 체크박스가 자동으로 체크(☑) 완료됩니다."),
-                ("실제 장비가 아직 없다면?", "• 마법사 상단 연결 대상을 [🟢 가상 시뮬레이션 장비]로 두면 실제 장비 없이도 모든 점검 테스트를 똑같이 체험할 수 있습니다."),
+                ("[1] [📡 STEP 2: 장비 연결 및 *IDN? 응답 확인] 클릭", "• 초록색 버튼을 누르면 장비에 *IDN? 식별 명령을 보내고, 아래 상태줄이 초록색 [✅ 연결 성공 (1.1 ms) | *IDN? 응답: TEKTRONIX,...]으로 바뀌며 통신 개통 여부를 즉시 알려줍니다."),
+                ("[2] 개별 확인 [🔍 1단계 확인] 또는 일괄 확인 [⚡ 자동 점검]", "• 각 점검 카드 우측의 파란색 [🔍 1단계/2단계 확인] 버튼을 하나씩 눌러 단계별로 검증하거나,\n• 우측 상단 보라색 [⚡ 모든 항목 한 번에 자동 점검 & 체크하기] 버튼 하나로 전체 단계를 한 번에 자동 검사할 수 있습니다."),
+                ("[3] 카드 내부 초록색 [✅ 확인 완료] 결과 및 자동 체크", "• 통신 검증에 성공한 카드는 테두리와 하단 결과창이 초록색([✅ 확인 완료 | 명령: *IDN? → 응답: ...])으로 바뀌며 좌측 체크박스(☑)가 자동으로 체크됩니다."),
+                ("점검 진행률 실시간 표시", "• 좌측 상단 '점검 진행률: 3 / 3 단계 확인 완료'가 초록색으로 바뀌면 모든 사전 준비가 완벽히 끝난 것입니다."),
             ],
-            "tip": "💡 만약 빨간색(연결 확인 필요)이나 노란색(응답 확인 필요)이 뜨더라도 안내된 조치 방법을 읽고 케이블이나 주소를 다시 확인하면 됩니다.",
+            "tip": "💡 만약 실제 장비가 아직 준비되지 않았다면 좌측 하단 [☑ 수동으로 전체 체크]를 누르거나 가상 시뮬레이션 모드로 통과할 수 있습니다.",
+        },
+        {
+            "page_no": 6,
+            "badge": "STEP 1 : 초보자 연결 가이드 상세 (3/3)",
+            "title": "[📘 초보자 연결 가이드 보기] 팝업창 및 장비별 케이블·메뉴 조작법",
+            "subtitle": "시작 팝업창의 카드 내부 안내 및 메인 화면에서 [📘 초보자 연결 가이드 보기] 클릭 시 뜨는 상세 안내 팝업창",
+            "image": screenshots["beginner_guide_popup"],
+            "steps": [
+                ("[1] 점검 항목 제목 및 핵심 설명 확인", "• 시작 팝업창의 각 카드 또는 메인 화면 점검표에서 [📘 초보자 연결 가이드 보기] 버튼을 누르면 위와 같은 상세 연결 가이드 팝업이 열립니다.\n• 초보자가 가장 흔히 실수하는 부분(예: USB 메모리용 Host 포트와 PC 연결용 Device 포트 구분, 전면/후면 단자 스위치 등)을 먼저 알려줍니다."),
+                ("[2] 1단계 ~ 4단계 따라하기 순서 (장비/PC 조작 순서)", "• 1) 장비의 어느 포트에 무슨 케이블(USB Type-B, USB 3.0, LAN, 바나나잭/트라이액셜)을 꽂아야 하는지,\n• 2) 장비 전면 패널에서 어떤 버튼(예: Utility > I/O, MENU > System > Communication, INPUTS Front/Rear 스위치)을 눌러야 하는지 번호 순서대로 자세히 설명합니다."),
+                ("[3] 자동 검증 명령어 및 정상 응답 기준 명시", "• 우측 [🔍 상태 확인] 버튼을 눌렀을 때 프로그램이 내부적으로 어떤 SCPI/TSP 명령어(*IDN?, *LANG?, :ROUT:TERM?, SYST:ERR?)를 보내고 어떤 응답이 와야 정상인지 명확히 보여줍니다."),
+                ("8대 제품군 30종 전 모델 맞춤 가이드 내장", "• 오실로스코프, AFG, 파워서플라이, MP5000, 스펙트럼 분석기, SMU, Tek VISA, DMM(DMM6500/7510/2110/2010) 각 모델의 매뉴얼 연결 절차가 모두 한국어로 수록되어 있습니다."),
+            ],
+            "tip": "💡 장비 연결이 막힐 때는 당황하지 말고 [📘 초보자 연결 가이드 보기]의 1~4번 순서와 [📖 선택 모델 PDF 매뉴얼 열기]를 차례대로 확인하세요.",
         },
         {
             "page_no": 6,
@@ -1064,6 +1149,8 @@ def main() -> int:
     print(f"      Captured {len(screenshots)} annotated GUI screenshots in: {SCREENSHOT_DIR}")
 
     pages = get_guide_pages(screenshots)
+    for idx, p in enumerate(pages, start=1):
+        p["page_no"] = idx
 
     print("[2/4] Building PowerPoint presentation (.pptx)...")
     build_powerpoint_guide(pages, PPTX_PATH)

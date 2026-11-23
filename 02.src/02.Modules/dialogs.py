@@ -271,7 +271,7 @@ class StartupReadinessDialog(QDialog):
         s1_layout = QVBoxLayout(grp_step1)
 
         row_sel = QHBoxLayout()
-        row_sel.addWidget(QLabel("① 장비 분류 (7개 폴더):"))
+        row_sel.addWidget(QLabel(f"① 장비 분류 ({len(self.category_profiles)}개 폴더):"))
         self.cmb_category = QComboBox()
         self.cmb_category.setMinimumWidth(280)
         for cat_id, prof in self.category_profiles.items():
