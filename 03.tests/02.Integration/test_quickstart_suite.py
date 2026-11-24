@@ -271,6 +271,13 @@ class TestTekQuickStartSuite(unittest.TestCase):
         self.assertIsNone(scope_panel.table_float_dialog)
         self.assertTrue(scope_panel.lbl_table_detached.isHidden())
 
+        # Verify SAITEK logo and technical support contact display
+        self.assertIsNotNone(win.lbl_logo)
+        self.assertIsNotNone(win.lbl_support_footer)
+        self.assertIn("사이텍(주)", win.lbl_support_footer.text())
+        self.assertIn("ssaitek@ssaitek.com", win.lbl_support_footer.text())
+        self.assertIn("041-698-4242", win.lbl_support_footer.text())
+
         win.close()
 
 

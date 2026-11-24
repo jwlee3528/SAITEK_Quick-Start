@@ -38,7 +38,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
 )
 from PyQt6.QtCore import Qt, QUrl, QRect
-from PyQt6.QtGui import QFont, QDesktopServices
+from PyQt6.QtGui import QFont, QPixmap, QDesktopServices
 
 
 def get_available_screen_geometry(widget: Optional[QWidget] = None) -> QRect:
@@ -251,14 +251,29 @@ class StartupReadinessDialog(QDialog):
             "background-color: #0b2545; color: white; border-radius: 8px; padding: 10px;"
         )
         b_layout = QVBoxLayout(banner)
-        title = QLabel("🧭 초보자용 장비-PC 연결 가이드 및 항목별 사전 준비 점검 마법사")
+        b_top = QHBoxLayout()
+        b_top.setSpacing(10)
+        logo_cand = os.path.join(_BASE_DIR, "로고 이미지.png")
+        if os.path.exists(logo_cand):
+            lbl_dlg_logo = QLabel()
+            lbl_dlg_logo.setStyleSheet(
+                "background-color: #ffffff; border: 1px solid #7dd3fc; border-radius: 4px; padding: 2px 6px;"
+            )
+            pix = QPixmap(logo_cand)
+            if not pix.isNull():
+                lbl_dlg_logo.setPixmap(pix.scaledToHeight(28, Qt.TransformationMode.SmoothTransformation))
+                b_top.addWidget(lbl_dlg_logo)
+
+        title = QLabel("🧭 장비-PC 연결 가이드 및 항목별 사전 준비 점검 마법사")
         title.setFont(QFont("Malgun Gothic", 13, QFont.Weight.Bold))
         title.setStyleSheet("color: #ffffff;")
+        b_top.addWidget(title, 1)
+        b_layout.addLayout(b_top)
+
         sub = QLabel(
             "장비를 처음 다루는 분도 아래 [STEP 1 장비 선택] → [STEP 2 케이블/리소스 연결] → [STEP 3 항목별 따라하기 및 개별 확인] 순서대로 누르면 즉시 측정 준비가 완료됩니다."
         )
         sub.setStyleSheet("color: #c9d6ea; font-size: 9.5pt;")
-        b_layout.addWidget(title)
         b_layout.addWidget(sub)
         layout.addWidget(banner)
 
@@ -392,6 +407,17 @@ class StartupReadinessDialog(QDialog):
         btn_check_all = QPushButton("☑ 수동으로 전체 체크")
         btn_check_all.clicked.connect(self._check_all_manually)
         btn_row.addWidget(btn_check_all)
+
+        lbl_dlg_support = QLabel(
+            "📞 <b>기술 문의 : 사이텍(주)</b> &nbsp;|&nbsp; "
+            "<b>E-mail :</b> ssaitek@ssaitek.com &nbsp;|&nbsp; "
+            "<b>Tel :</b> 041-698-4242"
+        )
+        lbl_dlg_support.setStyleSheet(
+            "background-color: #f0f9ff; color: #0f172a; border: 1px solid #bae6fd; "
+            "border-radius: 5px; padding: 5px 10px; font-size: 9pt;"
+        )
+        btn_row.addWidget(lbl_dlg_support)
         btn_row.addStretch()
 
         self.btn_start = QPushButton("🚀 선택한 장비 화면으로 이동하여 측정 시작하기")

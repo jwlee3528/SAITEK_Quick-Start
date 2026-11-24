@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 r"""
 Tektronix & Keithley Multi-Category QuickStart Program
 Automated Release Builder (Standalone Executable + Self-Contained Setup Installer)
@@ -160,7 +160,12 @@ def step1_build_main_executable() -> None:
     if os.path.exists(built_folder):
         os.rename(built_folder, LOCAL_PORTABLE_DIR)
 
-    # Copy 01.docs/10. Tek_Manuals and 05.data into LOCAL_PORTABLE_DIR
+    # Copy 01.docs/10. Tek_Manuals, logo image, and 05.data into LOCAL_PORTABLE_DIR
+    for logo_name in ("로고 이미지.png", "logo.png"):
+        src_logo = os.path.join(BASE_DIR, logo_name)
+        if os.path.exists(src_logo):
+            shutil.copy2(src_logo, os.path.join(LOCAL_PORTABLE_DIR, logo_name))
+
     src_manuals = os.path.join(BASE_DIR, "01.docs", "10. Tek_Manuals")
     dst_manuals = os.path.join(LOCAL_PORTABLE_DIR, "01.docs", "10. Tek_Manuals")
     if os.path.exists(src_manuals):

@@ -59,7 +59,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 from PyQt6.QtCore import Qt, QTimer, QSize
-from PyQt6.QtGui import QFont, QColor, QResizeEvent, QShowEvent
+from PyQt6.QtGui import QFont, QColor, QPixmap, QResizeEvent, QShowEvent
 
 from instrument_profiles import CATEGORY_PROFILES
 from visa_manager import VisaConnectionManager
@@ -83,6 +83,10 @@ class TekQuickStartMainWindow(QMainWindow):
         self.setWindowTitle(
             f"Tektronix & Keithley QuickStart Program (화면 자동 최적화: {avail.width()}×{avail.height()})"
         )
+
+        self.logo_path = resolve_app_Resource_path("로고 이미지.png")
+        if not os.path.exists(self.logo_path):
+            self.logo_path = resolve_app_Resource_path("logo.png")
 
         self._build_ui()
         self._apply_screen_adaptive_geometry()
@@ -130,6 +134,27 @@ class TekQuickStartMainWindow(QMainWindow):
         c_layout = QHBoxLayout(conn_bar)
         c_layout.setContentsMargins(8, 3, 8, 3)
         c_layout.setSpacing(6)
+
+        self.lbl_logo = QLabel()
+        self.lbl_logo.setStyleSheet(
+            "background-color: #ffffff; border: 1px solid #7dd3fc; border-radius: 4px; padding: 2px 6px;"
+        )
+        self.lbl_logo.setToolTip("사이텍(주) (SSAITEK) | 기술 문의: ssaitek@ssaitek.com / Tel: 041-698-4242")
+        if os.path.exists(self.logo_path):
+            pix = QPixmap(self.logo_path)
+            if not pix.isNull():
+                logo_h = 22 if self.is_compact_screen else 26
+                self.lbl_logo.setPixmap(
+                    pix.scaledToHeight(logo_h, Qt.TransformationMode.SmoothTransformation)
+                )
+            else:
+                self.lbl_logo.setText("SSAITEK")
+        else:
+            self.lbl_logo.setText("SSAITEK")
+            self.lbl_logo.setStyleSheet(
+                "background-color: #ffffff; color: #0284c7; font-weight: bold; border-radius: 4px; padding: 2px 6px;"
+            )
+        c_layout.addWidget(self.lbl_logo)
 
         title_lbl = QLabel("⚡ TEK QUICKSTART")
         title_lbl.setFont(QFont("Malgun Gothic", 10 if self.is_compact_screen else 11, QFont.Weight.Bold))
@@ -190,6 +215,14 @@ class TekQuickStartMainWindow(QMainWindow):
         )
         btn_fit_screen.clicked.connect(self.optimize_layout_for_screen)
         c_layout.addWidget(btn_fit_screen)
+
+        btn_tech_support = QPushButton("📞 기술 문의")
+        btn_tech_support.setToolTip("기술 문의: 사이텍(주) | E-mail : ssaitek@ssaitek.com | Tel : 041-698-4242")
+        btn_tech_support.setStyleSheet(
+            f"background-color: #0f766e; color: white; padding: {btn_pad}; font-weight: bold; border-radius: 4px;"
+        )
+        btn_tech_support.clicked.connect(self._show_tech_support_dialog)
+        c_layout.addWidget(btn_tech_support)
 
         btn_emg_stop = QPushButton("🚨 긴급 정지 (ALL STOP)")
         btn_emg_stop.setToolTip("모든 장비의 측정 루프를 즉시 중단하고 출력을 안전하게 OFF 합니다")
@@ -310,7 +343,39 @@ class TekQuickStartMainWindow(QMainWindow):
 
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
+
+        self.lbl_support_footer = QLabel(
+            "📞 <b>기술 문의 : 사이텍(주)</b> &nbsp;|&nbsp; "
+            "<b>E-mail :</b> <span style='color:#0369a1;'>ssaitek@ssaitek.com</span> &nbsp;|&nbsp; "
+            "<b>Tel :</b> <span style='color:#0f766e;'>041-698-4242</span>"
+        )
+        self.lbl_support_footer.setFont(QFont("Malgun Gothic", 9))
+        self.lbl_support_footer.setStyleSheet(
+            "background-color: #f0f9ff; color: #0f172a; border: 1px solid #bae6fd; "
+            "border-radius: 4px; padding: 2px 10px; margin-right: 4px;"
+        )
+        self.lbl_support_footer.setToolTip("클릭하거나 상단 [📞 기술 문의] 버튼을 누르면 상세 기술 문의 안내 창이 열립니다.")
+        self.status_bar.addPermanentWidget(self.lbl_support_footer)
+
         self._show_status_message("Tektronix QuickStart 준비 완료. 상단에서 장비 폴더 탭(01. AFGs ~ 08. Tek VISA)을 선택하세요.")
+
+    def _show_tech_support_dialog(self):
+        logo_html = ""
+        if os.path.exists(self.logo_path):
+            logo_url = self.logo_path.replace("\\", "/")
+            logo_html = f"<div style='margin-bottom:8px;'><img src='file:///{logo_url}' height='38'></div>"
+        html = (
+            f"{logo_html}"
+            "<h3>📞 기술 문의 안내 (Technical Support)</h3>"
+            "<p>프로그램 사용 및 계측 장비 연결·제어 관련 기술 문의는 아래 연락처로 문의해 주시기 바랍니다.</p>"
+            "<hr>"
+            "<p style='font-size:10.5pt; line-height:1.7;'>"
+            "• <b>회사명 :</b> 사이텍(주)<br>"
+            "• <b>E-mail :</b> <a href='mailto:ssaitek@ssaitek.com'>ssaitek@ssaitek.com</a><br>"
+            "• <b>Tel :</b> 041-698-4242"
+            "</p>"
+        )
+        QMessageBox.information(self, "기술 문의 - 사이텍(주)", html)
 
     def minimumSizeHint(self) -> QSize:
         return QSize(800, 520)
