@@ -310,7 +310,7 @@ class TekQuickStartMainWindow(QMainWindow):
 
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        self._show_status_message("Tektronix QuickStart 준비 완료. 상단에서 장비 폴더 탭(01. AFGs ~ 07. Tek VISA)을 선택하세요.")
+        self._show_status_message("Tektronix QuickStart 준비 완료. 상단에서 장비 폴더 탭(01. AFGs ~ 08. Tek VISA)을 선택하세요.")
 
     def minimumSizeHint(self) -> QSize:
         return QSize(800, 520)

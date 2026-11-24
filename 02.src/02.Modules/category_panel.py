@@ -27,6 +27,7 @@ else:
 
 from PyQt6.QtWidgets import (
     QWidget,
+    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QGridLayout,
@@ -51,14 +52,14 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtWidgets import QInputDialog, QMenu
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QUrl, QSize, QPoint
-from PyQt6.QtGui import QFont, QDesktopServices, QResizeEvent, QShowEvent
+from PyQt6.QtGui import QFont, QDesktopServices, QResizeEvent, QShowEvent, QCloseEvent
 
 import pyqtgraph as pg
 
 from instrument_profiles import CategoryProfile, ModelProfile, InputParameterSpec
 from instrument_drivers import create_driver_for_category, BaseCategoryDriver, MeasurementResult, OscilloscopeDriver
 from excel_exporter import export_session_to_excel
-from dialogs import PreStartConfirmDialog, ChecklistStepCard, get_available_screen_geometry
+from dialogs import PreStartConfirmDialog, ChecklistStepCard, get_available_screen_geometry, fit_and_center_window
 from run_history import (
     RunRecord,
     RunHistoryStore,
@@ -67,6 +68,56 @@ from run_history import (
     draw_run,
     clear_data_items,
 )
+
+
+class DetachablePaneDialog(QDialog):
+    """
+    Floating top-level window that hosts either the Real-Time Graph or the Measured Data Table
+    so the user can move it to another monitor or maximize it on a large screen.
+    Closing the window automatically docks the widget back into the main workspace splitter.
+    """
+
+    def __init__(self, title: str, dock_callback, parent: Any = None):
+        super().__init__(parent)
+        self._dock_callback = dock_callback
+        self._is_redocking = False
+        self.setWindowTitle(title)
+        self.setWindowFlags(
+            Qt.WindowType.Window
+            | Qt.WindowType.WindowMinimizeButtonHint
+            | Qt.WindowType.WindowMaximizeButtonHint
+            | Qt.WindowType.WindowCloseButtonHint
+        )
+        fit_and_center_window(self, target_w_ratio=0.78, target_h_ratio=0.78, min_w=760, min_h=480, max_w=2200, max_h=1350)
+
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(8, 6, 8, 8)
+        self.main_layout.setSpacing(6)
+
+        top_bar = QHBoxLayout()
+        lbl_info = QLabel(f"🗗 <b>{title}</b> &nbsp;<span style='color:#64748b; font-size:8.5pt;'>(이 창을 다른 모니터로 이동하거나 최대화하여 크게 볼 수 있습니다. 창을 닫으면 원래 화면으로 복귀합니다.)</span>")
+        lbl_info.setWordWrap(True)
+        top_bar.addWidget(lbl_info, 1)
+
+        self.btn_redock = QPushButton("↙ 원래 화면으로 복귀 (Dock)")
+        self.btn_redock.setStyleSheet(
+            "background-color: #0284c7; color: white; font-weight: bold; padding: 5px 12px; border-radius: 4px;"
+        )
+        self.btn_redock.clicked.connect(self.close)
+        top_bar.addWidget(self.btn_redock)
+        self.main_layout.addLayout(top_bar)
+
+        self.body_container = QWidget()
+        self.body_layout = QVBoxLayout(self.body_container)
+        self.body_layout.setContentsMargins(0, 0, 0, 0)
+        self.body_layout.setSpacing(4)
+        self.main_layout.addWidget(self.body_container, 1)
+
+    def closeEvent(self, a0: Optional[QCloseEvent]):
+        if not self._is_redocking:
+            self._is_redocking = True
+            self._dock_callback()
+        super().closeEvent(a0)
 
 
 class CategoryWorkspacePanel(QWidget):
@@ -95,7 +146,9 @@ class CategoryWorkspacePanel(QWidget):
         self.state = self.STATE_IDLE
         self.driver: Optional[BaseCategoryDriver] = None
         self.timer = QTimer(self)
+        self.timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.timer.timeout.connect(self._on_measurement_tick)
+        self._last_tick_start: float = 0.0
 
         # Widget registries
         self.checklist_widgets: Dict[str, QCheckBox] = {}
@@ -111,6 +164,8 @@ class CategoryWorkspacePanel(QWidget):
         self.hidden_columns: Set[str] = set()
         self._table_headers: List[str] = []
         self._initial_splitters_applied: bool = False
+        self.graph_float_dialog: Optional[DetachablePaneDialog] = None
+        self.table_float_dialog: Optional[DetachablePaneDialog] = None
 
         self._build_ui()
         self._on_model_changed(0)
@@ -564,6 +619,23 @@ class CategoryWorkspacePanel(QWidget):
         self.cmb_graph_mode.addItems(self.profile.graph_modes)
         self.cmb_graph_mode.currentIndexChanged.connect(self._refresh_plots)
         status_row.addWidget(self.cmb_graph_mode, 1)
+
+        self.btn_detach_graph = QPushButton("🗗 그래프 새 창 분리")
+        self.btn_detach_graph.setToolTip("실시간 측정 그래프를 별도 창으로 분리하여 다른 모니터나 전체 화면으로 크게 봅니다.")
+        self.btn_detach_graph.setStyleSheet(
+            "background-color: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 8.5pt;"
+        )
+        self.btn_detach_graph.clicked.connect(self.toggle_detach_graph)
+        status_row.addWidget(self.btn_detach_graph)
+
+        self.btn_detach_table = QPushButton("🗗 데이터 표 새 창 분리")
+        self.btn_detach_table.setToolTip("하단 측정 데이터 테이블을 별도 창으로 분리하여 다른 모니터나 큰 창으로 넓게 봅니다.")
+        self.btn_detach_table.setStyleSheet(
+            "background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 8.5pt;"
+        )
+        self.btn_detach_table.clicked.connect(self.toggle_detach_table)
+        status_row.addWidget(self.btn_detach_table)
+
         r_vbox.addLayout(status_row)
 
         # PyQtGraph Dual Plot Area + Data Table inside a resizable Vertical Splitter
@@ -577,14 +649,54 @@ class CategoryWorkspacePanel(QWidget):
         self.plot_table_splitter = QSplitter(Qt.Orientation.Vertical)
         self.plot_table_splitter.setChildrenCollapsible(False)
 
+        # Slot 0: Graph wrapper (holds cursor_bar + primary_plot or detached placeholder)
+        self.graph_slot_widget = QWidget()
+        self.graph_slot_layout = QVBoxLayout(self.graph_slot_widget)
+        self.graph_slot_layout.setContentsMargins(0, 0, 0, 0)
+        self.graph_slot_layout.setSpacing(2)
+
+        self.graph_inner_panel = QWidget()
+        g_inner_lay = QVBoxLayout(self.graph_inner_panel)
+        g_inner_lay.setContentsMargins(0, 0, 0, 0)
+        g_inner_lay.setSpacing(2)
+
         self.primary_plot = pg.PlotWidget()
         self.primary_plot.setMinimumHeight(130)
         self.primary_plot.setBackground("#0f172a")
         self.primary_plot.showGrid(x=True, y=True, alpha=0.3)
         self.primary_plot.addLegend(offset=(10, 10))
         self.cursor_bar = GraphCursorBar(self.primary_plot)
-        p_layout.addWidget(self.cursor_bar)
-        self.plot_table_splitter.addWidget(self.primary_plot)
+        btn_inline_pop_g = QPushButton("🗗 그래프 크게 보기 (새 창)")
+        btn_inline_pop_g.setToolTip("실시간 그래프를 별도 창으로 분리하거나 원래 화면으로 복귀합니다.")
+        btn_inline_pop_g.setStyleSheet(
+            "background-color: #dbeafe; color: #1e40af; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 8.5pt;"
+        )
+        btn_inline_pop_g.clicked.connect(self.toggle_detach_graph)
+        self.cursor_bar.layout().itemAt(0).layout().addWidget(btn_inline_pop_g)  # type: ignore[union-attr]
+
+        g_inner_lay.addWidget(self.cursor_bar)
+        g_inner_lay.addWidget(self.primary_plot, 1)
+        self.graph_slot_layout.addWidget(self.graph_inner_panel)
+
+        self.lbl_graph_detached = QLabel("🗗 실시간 측정 그래프가 별도 창으로 분리되어 표시 중입니다.\n(원래 위치로 되돌리려면 상단 [↙ 그래프 복귀] 버튼을 누르거나 분리된 창을 닫으세요.)")
+        self.lbl_graph_detached.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_graph_detached.setStyleSheet(
+            "background-color: #f8fafc; color: #475569; border: 1px dashed #94a3b8; border-radius: 6px; padding: 12px; font-size: 9pt;"
+        )
+        self.lbl_graph_detached.setVisible(False)
+        self.graph_slot_layout.addWidget(self.lbl_graph_detached)
+        self.plot_table_splitter.addWidget(self.graph_slot_widget)
+
+        # Slot 1: Data Table wrapper (holds data_table or detached placeholder)
+        self.table_slot_widget = QWidget()
+        self.table_slot_layout = QVBoxLayout(self.table_slot_widget)
+        self.table_slot_layout.setContentsMargins(0, 0, 0, 0)
+        self.table_slot_layout.setSpacing(2)
+
+        self.table_inner_panel = QWidget()
+        t_inner_lay = QVBoxLayout(self.table_inner_panel)
+        t_inner_lay.setContentsMargins(0, 0, 0, 0)
+        t_inner_lay.setSpacing(2)
 
         self.data_table = QTableWidget(0, 5)
         self.data_table.setMinimumHeight(80)
@@ -598,7 +710,17 @@ class CategoryWorkspacePanel(QWidget):
             h_dt.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
             h_dt.customContextMenuRequested.connect(self._on_header_menu)
             h_dt.setToolTip("컬럼 머리글을 우클릭하면 이름 변경 / 숨기기가 가능합니다.")
-        self.plot_table_splitter.addWidget(self.data_table)
+        t_inner_lay.addWidget(self.data_table, 1)
+        self.table_slot_layout.addWidget(self.table_inner_panel)
+
+        self.lbl_table_detached = QLabel("🗗 측정 데이터 테이블이 별도 창으로 분리되어 표시 중입니다.\n(원래 위치로 되돌리려면 상단 [↙ 데이터 표 복귀] 버튼을 누르거나 분리된 창을 닫으세요.)")
+        self.lbl_table_detached.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_table_detached.setStyleSheet(
+            "background-color: #f8fafc; color: #475569; border: 1px dashed #94a3b8; border-radius: 6px; padding: 12px; font-size: 9pt;"
+        )
+        self.lbl_table_detached.setVisible(False)
+        self.table_slot_layout.addWidget(self.lbl_table_detached)
+        self.plot_table_splitter.addWidget(self.table_slot_widget)
 
         self.plot_table_splitter.setStretchFactor(0, 3)
         self.plot_table_splitter.setStretchFactor(1, 2)
@@ -635,13 +757,119 @@ class CategoryWorkspacePanel(QWidget):
             "☑ 체크리스트 접기 ▲" if checked else "☑ 체크리스트 펼치기 ▼"
         )
 
+    # =========================================================================
+    # DETACHABLE GRAPH & DATA TABLE WINDOWS (Pop-Out / Redock)
+    # =========================================================================
+    def toggle_detach_graph(self):
+        if self.graph_float_dialog is not None:
+            self._redock_graph()
+        else:
+            self._detach_graph()
+
+    def _detach_graph(self):
+        if self.graph_float_dialog is not None:
+            self.graph_float_dialog.raise_()
+            self.graph_float_dialog.activateWindow()
+            return
+        dlg = DetachablePaneDialog(
+            title=f"{self.profile.title_ko} - 실시간 측정 그래프 (분리된 창)",
+            dock_callback=self._redock_graph,
+            parent=self.window(),
+        )
+        self.graph_slot_layout.removeWidget(self.graph_inner_panel)
+        dlg.body_layout.addWidget(self.graph_inner_panel)
+        self.graph_inner_panel.show()
+        self.lbl_graph_detached.setVisible(True)
+        self.graph_float_dialog = dlg
+        self.btn_detach_graph.setText("↙ 그래프 복귀")
+        self.btn_detach_graph.setStyleSheet(
+            "background-color: #dbeafe; color: #1e3a8a; border: 1px solid #3b82f6; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 8.5pt;"
+        )
+        dlg.show()
+        self._update_plot_table_splitter_sizes()
+        self.status_message_signal.emit(f"[{self.profile.title_ko}] 실시간 그래프를 별도 창으로 분리했습니다.")
+
+    def _redock_graph(self):
+        dlg = self.graph_float_dialog
+        self.graph_float_dialog = None
+        if dlg is not None:
+            dlg._is_redocking = True
+            dlg.body_layout.removeWidget(self.graph_inner_panel)
+            dlg.close()
+        self.lbl_graph_detached.setVisible(False)
+        self.graph_slot_layout.insertWidget(0, self.graph_inner_panel)
+        self.graph_inner_panel.show()
+        self.btn_detach_graph.setText("🗗 그래프 새 창 분리")
+        self.btn_detach_graph.setStyleSheet(
+            "background-color: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 8.5pt;"
+        )
+        self._update_plot_table_splitter_sizes()
+        self.status_message_signal.emit(f"[{self.profile.title_ko}] 실시간 그래프가 메인 화면으로 복귀했습니다.")
+
+    def toggle_detach_table(self):
+        if self.table_float_dialog is not None:
+            self._redock_table()
+        else:
+            self._detach_table()
+
+    def _detach_table(self):
+        if self.table_float_dialog is not None:
+            self.table_float_dialog.raise_()
+            self.table_float_dialog.activateWindow()
+            return
+        dlg = DetachablePaneDialog(
+            title=f"{self.profile.title_ko} - 실시간 측정 데이터 테이블 (분리된 창)",
+            dock_callback=self._redock_table,
+            parent=self.window(),
+        )
+        self.table_slot_layout.removeWidget(self.table_inner_panel)
+        dlg.body_layout.addWidget(self.table_inner_panel)
+        self.table_inner_panel.show()
+        self.lbl_table_detached.setVisible(True)
+        self.table_float_dialog = dlg
+        self.btn_detach_table.setText("↙ 데이터 표 복귀")
+        self.btn_detach_table.setStyleSheet(
+            "background-color: #dcfce7; color: #14532d; border: 1px solid #22c55e; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 8.5pt;"
+        )
+        dlg.show()
+        self._update_plot_table_splitter_sizes()
+        self.status_message_signal.emit(f"[{self.profile.title_ko}] 측정 데이터 테이블을 별도 창으로 분리했습니다.")
+
+    def _redock_table(self):
+        dlg = self.table_float_dialog
+        self.table_float_dialog = None
+        if dlg is not None:
+            dlg._is_redocking = True
+            dlg.body_layout.removeWidget(self.table_inner_panel)
+            dlg.close()
+        self.lbl_table_detached.setVisible(False)
+        self.table_slot_layout.insertWidget(0, self.table_inner_panel)
+        self.table_inner_panel.show()
+        self.btn_detach_table.setText("🗗 데이터 표 새 창 분리")
+        self.btn_detach_table.setStyleSheet(
+            "background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 8.5pt;"
+        )
+        self._update_plot_table_splitter_sizes()
+        self.status_message_signal.emit(f"[{self.profile.title_ko}] 측정 데이터 테이블이 메인 화면으로 복귀했습니다.")
+
+    def _update_plot_table_splitter_sizes(self):
+        ph = self.plot_table_splitter.height()
+        if ph <= 120:
+            return
+        g_det = self.graph_float_dialog is not None
+        t_det = self.table_float_dialog is not None
+        if g_det and not t_det:
+            self.plot_table_splitter.setSizes([56, max(100, ph - 56)])
+        elif t_det and not g_det:
+            self.plot_table_splitter.setSizes([max(100, ph - 56), 56])
+        else:
+            self.plot_table_splitter.setSizes([int(ph * 0.65), int(ph * 0.35)])
+
     def sync_splitter_proportions(self):
         w = self.main_splitter.width() or self.width()
         if w > 300:
             self.main_splitter.setSizes([int(w * 0.25), int(w * 0.27), int(w * 0.48)])
-        ph = self.plot_table_splitter.height()
-        if ph > 160:
-            self.plot_table_splitter.setSizes([int(ph * 0.65), int(ph * 0.35)])
+        self._update_plot_table_splitter_sizes()
 
     def showEvent(self, a0: Optional[QShowEvent]):
         super().showEvent(a0)
@@ -917,15 +1145,16 @@ class CategoryWorkspacePanel(QWidget):
             return
 
         poll_s = float(inputs.get("poll_interval_s", 0.5))
-        self.timer.start(max(15, int(poll_s * 1000)))
+        self._target_poll_ms = max(15, int(poll_s * 1000))
         self._set_state(self.STATE_RUNNING)
         self._on_measurement_tick()
 
     def _on_poll_interval_spin_changed(self, new_val: float):
         """Updates the acquisition timer immediately when the user changes poll_interval_s while running."""
         target_ms = max(15, int(float(new_val) * 1000))
-        if self.timer.isActive() and self.timer.interval() != target_ms:
-            self.timer.setInterval(target_ms)
+        self._target_poll_ms = target_ms
+        if self.timer.isActive() and self.timer.interval() > target_ms:
+            self.timer.start(max(1, target_ms))
 
     # =========================================================================
     # RUN HISTORY / COLUMN CUSTOMISATION / EXPORT OPTIONS
@@ -1116,10 +1345,11 @@ class CategoryWorkspacePanel(QWidget):
     def _on_measurement_tick(self):
         if self.driver is None or self.state != self.STATE_RUNNING:
             return
+        t_tick_start = time.perf_counter()
+        self._last_tick_start = t_tick_start
         inputs = self.collect_inputs()
         target_ms = max(15, int(float(inputs.get("poll_interval_s", 0.5)) * 1000))
-        if self.timer.interval() != target_ms:
-            self.timer.setInterval(target_ms)
+        self._target_poll_ms = target_ms
         selected_meas = self.collect_selected_measurables()
         try:
             res: MeasurementResult = self.driver.acquire_step(inputs, selected_meas)
@@ -1197,6 +1427,12 @@ class CategoryWorkspacePanel(QWidget):
         if res.is_completed_sweep:
             self.on_stop_clicked()
             self.status_message_signal.emit(f"[{self.profile.title_ko}] 지정된 스윕({res.step_index} 포인트) 측정이 완료되어 자동 정지되었습니다.")
+            return
+
+        if self.state == self.STATE_RUNNING:
+            elapsed_work_ms = int((time.perf_counter() - t_tick_start) * 1000.0)
+            wait_ms = max(5, target_ms - elapsed_work_ms)
+            self.timer.start(wait_ms)
 
     def _refresh_plots(self):
         clear_data_items(self.primary_plot)

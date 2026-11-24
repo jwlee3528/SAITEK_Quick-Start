@@ -40,7 +40,18 @@ class TestTekQuickStartSuite(unittest.TestCase):
         os.makedirs(cls.sample_out_dir, exist_ok=True)
 
     def test_01_all_seven_manual_categories_and_pdf_links(self):
-        self.assertEqual(len(CATEGORY_PROFILES), 8, "Must have all 8 manual categories (01.AFGs ~ 08.DMM)")
+        self.assertEqual(len(CATEGORY_PROFILES), 8, "Must have all 8 manual categories (01.AFGs ~ 08.Tek VISA)")
+        expected_order = [
+            "01_AFG",
+            "02_DC_POWER",
+            "08_DMM",
+            "04_OSCILLOSCOPE",
+            "05_SPECTRUM",
+            "06_SMU",
+            "03_DC_PRECISION",
+            "07_TEK_VISA",
+        ]
+        self.assertEqual(list(CATEGORY_PROFILES.keys()), expected_order)
         for cat_id, profile in CATEGORY_PROFILES.items():
             self.assertTrue(len(profile.models) >= 1)
             self.assertTrue(len(profile.checklist) >= 3, f"{cat_id} missing remote readiness checklist")
@@ -245,6 +256,20 @@ class TestTekQuickStartSuite(unittest.TestCase):
         self.assertIn("CH3 Voltage (V)", scope_run.waveform_multi_y)
         plot_names = [it.name() for it in scope_panel.primary_plot.getPlotItem().listDataItems()]
         self.assertEqual(len(plot_names), 3, plot_names)
+
+        # Verify detachable Graph and Data Table floating windows (Pop-out & Redock)
+        scope_panel.toggle_detach_graph()
+        self.assertIsNotNone(scope_panel.graph_float_dialog)
+        self.assertFalse(scope_panel.lbl_graph_detached.isHidden())
+        scope_panel.toggle_detach_table()
+        self.assertIsNotNone(scope_panel.table_float_dialog)
+        self.assertFalse(scope_panel.lbl_table_detached.isHidden())
+        scope_panel.toggle_detach_graph()
+        self.assertIsNone(scope_panel.graph_float_dialog)
+        self.assertTrue(scope_panel.lbl_graph_detached.isHidden())
+        scope_panel.toggle_detach_table()
+        self.assertIsNone(scope_panel.table_float_dialog)
+        self.assertTrue(scope_panel.lbl_table_detached.isHidden())
 
         win.close()
 

@@ -448,6 +448,17 @@ class OscilloscopeDriver(BaseCategoryDriver):
     Supports single or multi-channel simultaneous selection (e.g. CH1, CH2, CH3, CH4).
     """
 
+    NEXTGEN_MODELS = ("MSO_2_SERIES", "MSO_4_5_6", "DPO_7_SERIES")
+
+    def __init__(self, visa_mgr, category_id: str, model_id: str):
+        super().__init__(visa_mgr, category_id, model_id)
+        self._badge_map: Dict[Tuple[str, str], int] = {}
+        self._badge_cfg_signature: Optional[Tuple[Tuple[str, ...], Tuple[str, ...]]] = None
+
+    @property
+    def _is_nextgen_mso(self) -> bool:
+        return self.model_id in self.NEXTGEN_MODELS
+
     @staticmethod
     def parse_selected_channels(ch_input: Any) -> List[str]:
         """Normalizes channel input (str or list) into an ordered list of channels ['CH1', ...]."""
@@ -463,17 +474,115 @@ class OscilloscopeDriver(BaseCategoryDriver):
                 found.append(c)
         return found if found else ["CH1"]
 
+    def _get_meas_map(self) -> Dict[str, Tuple[str, str]]:
+        rms_type = "RMS" if self._is_nextgen_mso else "CRMs"
+        return {
+            "meas_freq": ("FREQuency", "Frequency (Hz)"),
+            "meas_period": ("PERIod", "Period (s)"),
+            "meas_pk2pk": ("PK2Pk", "Vpp (V)"),
+            "meas_mean": ("MEAN", "Vmean (V)"),
+            "meas_rms": (rms_type, "Vrms (V)"),
+            "meas_max": ("MAXImum", "Vmax (V)"),
+            "meas_min": ("MINImum", "Vmin (V)"),
+        }
+
+    def _setup_nextgen_meas_badges(self, channels: List[str], selected_meas: List[str]):
+        """Configures hardware MEAS<x> badges once on 2/4/5/6/7 Series MSO so each reading takes ~3ms instead of ~300ms."""
+        meas_map = self._get_meas_map()
+        active_keys = [k for k in meas_map.keys() if k in selected_meas]
+        sig = (tuple(channels), tuple(active_keys))
+        if self._badge_cfg_signature == sig:
+            return
+
+        self._badge_map.clear()
+        slot_idx = 1
+        for key in active_keys:
+            scpi_type, _ = meas_map[key]
+            for ch in channels:
+                self.visa.write(f"MEASUrement:MEAS{slot_idx}:SOUrce1 {ch}")
+                self.visa.write(f"MEASUrement:MEAS{slot_idx}:TYPe {scpi_type}")
+                self.visa.write(f"MEASUrement:MEAS{slot_idx}:STATE ON")
+                self._badge_map[(key, ch)] = slot_idx
+                slot_idx += 1
+        self._badge_cfg_signature = sig
+
+    @staticmethod
+    def _compute_wave_scalars(
+        v_wave: np.ndarray,
+        t_wave_ms: np.ndarray,
+        v_scale: float,
+    ) -> Dict[str, float]:
+        """Computes high-speed scalar measurements directly from the captured waveform array (zero extra SCPI latency)."""
+        if len(v_wave) == 0:
+            return {k: 0.0 for k in ("meas_freq", "meas_period", "meas_pk2pk", "meas_mean", "meas_rms", "meas_max", "meas_min")}
+        vmax = float(np.max(v_wave))
+        vmin = float(np.min(v_wave))
+        vpp = vmax - vmin
+        vmean = float(np.mean(v_wave))
+        vrms = float(np.sqrt(np.mean(np.square(v_wave))))
+
+        # Estimate frequency & period via mid-level rising crossings with hysteresis
+        freq = 0.0
+        period = 0.0
+        min_amp_threshold = max(0.05 * v_scale, 0.02)
+        if vpp >= min_amp_threshold and len(t_wave_ms) >= 10:
+            mid = 0.5 * (vmax + vmin)
+            centered = v_wave - mid
+            # Rising zero crossings
+            crossings = np.where((centered[:-1] < 0.0) & (centered[1:] >= 0.0))[0]
+            if len(crossings) >= 2:
+                # Fractional interpolation for sub-sample accuracy
+                t_cross: List[float] = []
+                for idx in crossings:
+                    dv = float(centered[idx + 1] - centered[idx])
+                    frac = float(-centered[idx] / dv) if abs(dv) > 1e-12 else 0.0
+                    t_c = float(t_wave_ms[idx]) + frac * float(t_wave_ms[idx + 1] - t_wave_ms[idx])
+                    if not t_cross or (t_c - t_cross[-1]) > (float(t_wave_ms[-1] - t_wave_ms[0]) / max(20.0, len(crossings) * 2.0)):
+                        t_cross.append(t_c)
+                if len(t_cross) >= 2:
+                    avg_period_ms = (t_cross[-1] - t_cross[0]) / (len(t_cross) - 1)
+                    if avg_period_ms > 1e-9:
+                        period = avg_period_ms * 1e-3  # seconds
+                        freq = 1.0 / period
+
+        return {
+            "meas_freq": round(freq, 4),
+            "meas_period": round(period, 7),
+            "meas_pk2pk": round(vpp, 5),
+            "meas_mean": round(vmean, 6),
+            "meas_rms": round(vrms, 6),
+            "meas_max": round(vmax, 5),
+            "meas_min": round(vmin, 5),
+        }
+
     def configure_and_start(self, inputs: Dict[str, Any], selected_meas: List[str]):
         super().configure_and_start(inputs, selected_meas)
+        self._badge_map.clear()
+        self._badge_cfg_signature = None
+
         channels = self.parse_selected_channels(inputs.get("channel", "CH1"))
         ch_main = channels[0]
 
+        self.visa.write("*CLS")
         self.visa.write("HEADer OFF")
         for ch in channels:
             self.visa.write(f"SELect:{ch} ON")
 
         if inputs.get("use_autoset", False):
-            self.visa.write("AUTOSet EXECute")
+            # AUTOSet EXECute takes ~5-6s on 2/4/5/6 Series MSO; wait with extended timeout via *OPC?
+            prev_tmo = getattr(self.visa.session, "timeout", 5000) if self.visa.session is not None else 5000
+            try:
+                if self.visa.session is not None:
+                    self.visa.session.timeout = 15000
+                self.visa.write("AUTOSet EXECute")
+                self.visa.query("*OPC?")
+            except Exception:
+                pass
+            finally:
+                if self.visa.session is not None:
+                    self.visa.session.timeout = prev_tmo
+            for ch in channels:
+                self.visa.write(f"SELect:{ch} ON")
         else:
             coup = inputs.get("coupling", "DC")
             v_scale = float(inputs.get("v_scale", 1.0))
@@ -491,67 +600,52 @@ class OscilloscopeDriver(BaseCategoryDriver):
             self.visa.write(f"HORizontal:SCAle {h_scale}")
             self.visa.write(f"TRIGger:A:EDGE:SOUrce {trig_src}")
             self.visa.write(f"TRIGger:A:EDGE:SLOpe {trig_slp}")
-            self.visa.write(f"TRIGger:A:LEVel {trig_lvl}")
+            if self._is_nextgen_mso and trig_src.startswith("CH"):
+                self.visa.write(f"TRIGger:A:LEVel:{trig_src} {trig_lvl}")
+            else:
+                self.visa.write(f"TRIGger:A:LEVel {trig_lvl}")
             self.visa.write(f"ACQuire:MODe {acq_mode}")
 
         rec_pts = int(inputs.get("record_pts", 1000))
+        if self._is_nextgen_mso:
+            self.visa.write("HORizontal:MODe MANual")
+            self.visa.write(f"HORizontal:MODe:RECORDlength {rec_pts}")
+            if "wfm_curve" not in selected_meas:
+                self._setup_nextgen_meas_badges(channels, selected_meas)
+
         self.visa.write(f"DATa:SOUrce {ch_main}")
         self.visa.write("DATa:ENCdg ASCIi")
         self.visa.write("DATa:WIDth 1")
         self.visa.write("DATa:STARt 1")
         self.visa.write(f"DATa:STOP {rec_pts}")
         self.visa.write("ACQuire:STATE RUN")
+        if self._is_nextgen_mso:
+            try:
+                self.visa.query("*OPC?")
+            except Exception:
+                pass
+        self.start_epoch = time.time()
 
     def acquire_step(self, inputs: Dict[str, Any], selected_meas: List[str]) -> MeasurementResult:
         res = MeasurementResult()
-        res.elapsed_s = round(time.time() - self.start_epoch, 3)
         self.step_count += 1
         res.step_index = self.step_count
 
         channels = self.parse_selected_channels(inputs.get("channel", "CH1"))
         ch_main = channels[0]
         multi = len(channels) > 1
+        meas_map = self._get_meas_map()
 
-        # Automated immediate measurements across all selected channels
-        meas_map = {
-            "meas_freq": ("FREQuency", "Frequency (Hz)"),
-            "meas_period": ("PERIod", "Period (s)"),
-            "meas_pk2pk": ("PK2Pk", "Vpp (V)"),
-            "meas_mean": ("MEAN", "Vmean (V)"),
-            "meas_rms": ("CRMs", "Vrms (V)"),
-            "meas_max": ("MAXImum", "Vmax (V)"),
-            "meas_min": ("MINImum", "Vmin (V)"),
-        }
-        for key, (scpi_type, plot_lbl) in meas_map.items():
-            if key in selected_meas:
-                ch_vals: List[Tuple[str, float]] = []
-                for ch in channels:
-                    self.visa.write(f"MEASUrement:IMMed:SOUrce1 {ch}")
-                    self.visa.write(f"MEASUrement:IMMed:TYPe {scpi_type}")
-                    val_str, _ = self.visa.query("MEASUrement:IMMed:VALue?")
-                    try:
-                        val = round(float(val_str.split()[-1]), 6)
-                    except ValueError:
-                        val = 0.0
-                    ch_vals.append((ch, val))
-                    res.scalars[f"{key}_{ch}"] = val
-                    series_key = f"{ch} {plot_lbl}" if multi else plot_lbl
-                    res.primary_plot_y[series_key] = val
+        v_scale = float(inputs.get("v_scale", 1.0))
+        h_scale = float(inputs.get("h_scale", 0.001))
+        ymult = v_scale / 25.0
+        yoff = 0.0
+        yzero = float(inputs.get("v_offset", 0.0))
 
-                if multi:
-                    res.scalars[key] = " | ".join(f"{ch}:{v:g}" for ch, v in ch_vals)
-                else:
-                    res.scalars[key] = ch_vals[0][1]
-
-        # Waveform CURVe? transfer and scaling across all selected channels: Y = YZERO + YMULT * (data - YOFF)
+        # 1. Waveform CURVe? transfer and scaling across all selected channels: Y = YZERO + YMULT * (data - YOFF)
+        captured_waves: Dict[str, np.ndarray] = {}
+        t_wave: Optional[np.ndarray] = None
         if "wfm_curve" in selected_meas:
-            v_scale = float(inputs.get("v_scale", 1.0))
-            h_scale = float(inputs.get("h_scale", 0.001))
-            ymult = v_scale / 25.0
-            yoff = 0.0
-            yzero = float(inputs.get("v_offset", 0.0))
-
-            t_wave: Optional[np.ndarray] = None
             first_wave: Optional[np.ndarray] = None
             total_pts = 0
             for ch in channels:
@@ -566,6 +660,7 @@ class OscilloscopeDriver(BaseCategoryDriver):
                     t_wave = np.linspace(0, h_scale * 10.0, len(v_wave)) * 1e3  # ms
                 if first_wave is None:
                     first_wave = v_wave
+                captured_waves[ch] = v_wave
                 res.waveform_multi_y[f"{ch} Voltage (V)"] = v_wave
                 total_pts = len(v_wave)
 
@@ -583,6 +678,46 @@ class OscilloscopeDriver(BaseCategoryDriver):
             for ch in channels:
                 res.scalars[f"wfm_curve_{ch}"] = f"{total_pts} pts"
 
+        # 2. Automated scalar measurements across all selected channels
+        # When waveform curve was already transferred on 2/4/5/6/7 Series MSO, compute scalars directly from the waveform
+        # in <0.5 ms so multi-channel CURVe? stays at full speed without 10+ extra SCPI round-trips per step.
+        computed_per_ch: Dict[str, Dict[str, float]] = {}
+        if self._is_nextgen_mso and captured_waves and t_wave is not None:
+            for ch, w_arr in captured_waves.items():
+                computed_per_ch[ch] = self._compute_wave_scalars(w_arr, t_wave, v_scale)
+        elif self._is_nextgen_mso:
+            self._setup_nextgen_meas_badges(channels, selected_meas)
+
+        for key, (scpi_type, plot_lbl) in meas_map.items():
+            if key in selected_meas:
+                ch_vals: List[Tuple[str, float]] = []
+                for ch in channels:
+                    if ch in computed_per_ch:
+                        val = computed_per_ch[ch].get(key, 0.0)
+                    else:
+                        slot_idx = self._badge_map.get((key, ch))
+                        if self._is_nextgen_mso and slot_idx is not None:
+                            val_str, _ = self.visa.query(f"MEASUrement:MEAS{slot_idx}:VALue?")
+                        else:
+                            self.visa.write(f"MEASUrement:IMMed:SOUrce1 {ch}")
+                            self.visa.write(f"MEASUrement:IMMed:TYPe {scpi_type}")
+                            val_str, _ = self.visa.query("MEASUrement:IMMed:VALue?")
+                        try:
+                            raw_f = float(val_str.split()[-1])
+                            val = 0.0 if abs(raw_f) > 1e30 else round(raw_f, 6)
+                        except ValueError:
+                            val = 0.0
+                    ch_vals.append((ch, val))
+                    res.scalars[f"{key}_{ch}"] = val
+                    series_key = f"{ch} {plot_lbl}" if multi else plot_lbl
+                    res.primary_plot_y[series_key] = val
+
+                if multi:
+                    res.scalars[key] = " | ".join(f"{ch}:{v:g}" for ch, v in ch_vals)
+                else:
+                    res.scalars[key] = ch_vals[0][1]
+
+        res.elapsed_s = round(time.time() - self.start_epoch, 3)
         return res
 
     def pause_measurement(self, inputs: Dict[str, Any]):

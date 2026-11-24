@@ -74,6 +74,7 @@ class VirtualInstrumentSimulator:
         self.scope_source = "CH1"
         self.scope_meas_type = "FREQuency"
         self.scope_stop = 1000
+        self.scope_meas_slots: Dict[int, Tuple[str, str]] = {}  # slot_idx -> (ch, meas_type)
         # Spectrum state
         self.spec_center_hz = 1000e6
         self.spec_span_hz = 40e6
@@ -265,7 +266,19 @@ class VirtualInstrumentSimulator:
                 self.psu[self.psu_sel_ch]["i_lim"] = float(nums[1])
 
         # Scope
-        if "MEASUREMENT:IMMED:TYPE" in cu or "MEASU:IMM:TYP" in cu:
+        m_meas_slot = re.match(r"^:?MEASU(?:REMENT)?:MEAS(\d+):(SOU(?:RCE)?1?|TYP(?:E)?)\s+(.+)$", cu)
+        if m_meas_slot:
+            slot_i = int(m_meas_slot.group(1))
+            prop = m_meas_slot.group(2)
+            val_s = m_meas_slot.group(3).strip()
+            old_ch, old_ty = self.scope_meas_slots.get(slot_i, ("CH1", "FREQuency"))
+            if prop.startswith("SOU"):
+                self.scope_meas_slots[slot_i] = (val_s, old_ty)
+            else:
+                self.scope_meas_slots[slot_i] = (old_ch, val_s)
+        elif "MEASUREMENT:DELETE" in cu or "MEASU:DEL" in cu:
+            self.scope_meas_slots.clear()
+        elif "MEASUREMENT:IMMED:TYPE" in cu or "MEASU:IMM:TYP" in cu:
             self.scope_meas_type = cu.split()[-1]
         elif "MEASUREMENT:IMMED:SOURCE" in cu or "MEASU:IMM:SOU" in cu:
             self.scope_source = cu.split()[-1]
@@ -413,6 +426,10 @@ class VirtualInstrumentSimulator:
             return f"{v:.6f},{i:.6e}"
 
         # Scope queries
+        if "MEASU" in cu and "LIST?" in cu:
+            if not self.scope_meas_slots:
+                return "NONE"
+            return ",".join(f"MEAS{k}" for k in sorted(self.scope_meas_slots.keys()))
         if "WFMOUTPRE?" in cu or "WFMPRE?" in cu:
             return f"1;8;ASC;RP;MSB;{self.scope_stop};\"{self.scope_source}, DC coupling\";Y;{self.scope_hscale/100.0:.6e};0;\"s\";{self.scope_vscale/25.0:.6e};0.0;0.0;\"V\""
         if "CURVE?" in cu or "CURV?" in cu:
@@ -433,8 +450,14 @@ class VirtualInstrumentSimulator:
                 pts.append(str(max(-127, min(127, val))))
             return ",".join(pts)
         if "MEASU" in cu and ("VAL" in cu or "MEAN?" in cu):
-            mt = self.scope_meas_type.upper()
-            ch_num = int(self.scope_source[-1]) if self.scope_source[-1].isdigit() else 1
+            m_slot_q = re.search(r"MEAS(\d+):", cu)
+            if m_slot_q and int(m_slot_q.group(1)) in self.scope_meas_slots:
+                src_ch, mt_raw = self.scope_meas_slots[int(m_slot_q.group(1))]
+                mt = mt_raw.upper()
+                ch_num = int(src_ch[-1]) if src_ch[-1].isdigit() else 1
+            else:
+                mt = self.scope_meas_type.upper()
+                ch_num = int(self.scope_source[-1]) if self.scope_source[-1].isdigit() else 1
             amp_factor = {1: 1.0, 2: 0.75, 3: 0.55, 4: 0.40}.get(ch_num, 1.0)
             freq_factor = 2.0 if ch_num == 3 else 1.0
             if "FREQ" in mt:

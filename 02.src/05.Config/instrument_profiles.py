@@ -321,10 +321,10 @@ CATEGORY_PROFILES: Dict[str, CategoryProfile] = {
         ],
     ),
 
-    "03_DC_PRECISION": CategoryProfile(
+    "07_DC_PRECISION": CategoryProfile(
         folder_id="03_DC_PRECISION",
-        folder_name="03. DC Precision Test",
-        title_ko="03. DC Precision Test (MP5000 모듈형 정밀 테스트 시스템)",
+        folder_name="07. DC Precision test",
+        title_ko="07. DC Precision test (MP5000 모듈형 정밀 테스트 시스템)",
         icon_text="🎯",
         description="MP5000 시리즈(MP5103 메인프레임 + PSU/SMU 슬롯 모듈) TSP 스크립트 기반 정밀 소스/측정 및 TriggerFlow 스윕",
         has_power_output=True,
@@ -884,8 +884,8 @@ CATEGORY_PROFILES: Dict[str, CategoryProfile] = {
 
     "07_TEK_VISA": CategoryProfile(
         folder_id="07_TEK_VISA",
-        folder_name="07. Tek VISA",
-        title_ko="07. Tek VISA (OpenChoice Talker/Listener & 리소스 매니저)",
+        folder_name="08. Tek VISA",
+        title_ko="08. Tek VISA (OpenChoice Talker/Listener & 리소스 매니저)",
         icon_text="🔌",
         description="TekVISA 리소스 검색(viFindRsrc), 연결 속성 진단, OpenChoice Talker/Listener 대화형 명령 송수신 및 반복 루프 로깅",
         has_power_output=False,
@@ -965,12 +965,12 @@ CATEGORY_PROFILES: Dict[str, CategoryProfile] = {
     ),
 
     # =========================================================================
-    # 08. Digit Multimeter (DMM) (4 Reference / User Manuals)
+    # 03. DMM (Digit Multimeter) (4 Reference / User Manuals)
     # =========================================================================
     "08_DMM": CategoryProfile(
         folder_id="08_DMM",
-        folder_name="08. Digit Multimeter(DMM)",
-        title_ko="08. Digit Multimeter (DMM - 정밀 디지털 멀티미터)",
+        folder_name="03. DMM",
+        title_ko="03. DMM (Digit Multimeter - 정밀 디지털 멀티미터)",
         icon_text="📟",
         description="5½ ~ 7½ 디지트 고정밀 벤치/시스템 디지털 멀티미터 (DC/AC 전압·전류, 2선/4선 저항, 주파수, 온도 및 1MS/s 고속 디지타이저 파형 측정)",
         has_power_output=False,
@@ -1259,4 +1259,22 @@ CATEGORY_PROFILES: Dict[str, CategoryProfile] = {
             ),
         ],
     ),
+}
+
+# Enforce the user-requested tab & category display order:
+# 01. AFGs // 02. DC power Supplies // 03. DMM // 04. Oscilloscopes //
+# 05. Spectrum Analyzers // 06. SMUs // 07. DC Precision test // 08. Tek VISA
+_ORDERED_CATEGORY_KEYS = (
+    "01_AFG",
+    "02_DC_POWER",
+    "08_DMM",
+    "04_OSCILLOSCOPE",
+    "05_SPECTRUM",
+    "06_SMU",
+    "07_DC_PRECISION",
+    "07_TEK_VISA",
+)
+CATEGORY_PROFILES = {
+    CATEGORY_PROFILES[k].folder_id: CATEGORY_PROFILES[k]
+    for k in _ORDERED_CATEGORY_KEYS
 }
