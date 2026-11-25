@@ -757,7 +757,7 @@ CATEGORY_PROFILES: Dict[str, CategoryProfile] = {
             ModelProfile(
                 model_id="SMU_2600B",
                 display_name="Series 2600B System SourceMeter (2601B/2602B/2611B/2612B/2635B/2636B)",
-                manual_file="06. SMUs/2600BS-901-01F_2600B_Reference_Aug2021 (3).pdf",
+                manual_file="06. SMUs/2600BS-901-01F_2600B_Reference_Aug2021.pdf",
                 protocol="TSP",
                 interfaces=["USB (USBTMC)", "LAN (VXI-11 / Raw Socket)", "GPIB", "RS-232"],
                 max_channels=2,

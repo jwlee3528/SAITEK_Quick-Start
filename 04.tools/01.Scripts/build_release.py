@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 r"""
-Tektronix & Keithley Multi-Category QuickStart Program
+SAITEK Tektronix Quick Start SW
 Automated Release Builder (Standalone Executable + Self-Contained Setup Installer)
 
 Outputs to: F:\02.Project\06. Tek Quickstart program\06.Release
-1. 06.Release\TekQuickStart_Portable\TekQuickStart.exe  (Direct executable package)
-2. 06.Release\TekQuickStart_Setup.exe                   (Single-file GUI Setup Installer)
+1. 06.Release\SAITEK Tektronix Quick Start SW_Portable\SAITEK Tektronix Quick Start SW.exe  (Direct executable package)
+2. 06.Release\SAITEK Tektronix Quick Start SW_Setup.exe                                     (Single-file GUI Setup Installer)
 """
 
 import os
@@ -17,16 +17,21 @@ import subprocess
 import time
 
 
+APP_NAME = "SAITEK Tektronix Quick Start SW"
+PORTABLE_FOLDER_NAME = f"{APP_NAME}_Portable"
+SETUP_EXE_NAME = f"{APP_NAME}_Setup"
+PAYLOAD_ZIP_NAME = f"{APP_NAME}_Payload.zip"
+
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SRC_DIR = os.path.join(BASE_DIR, "02.src")
 RELEASE_DIR = os.path.join(BASE_DIR, "06.Release")
-PORTABLE_DIR = os.path.join(RELEASE_DIR, "TekQuickStart_Portable")
+PORTABLE_DIR = os.path.join(RELEASE_DIR, PORTABLE_FOLDER_NAME)
 
 # Use local C: temp directory for PyInstaller work/dist assembly to avoid external drive I/O bottlenecks
-LOCAL_BUILD_ROOT = os.path.join(tempfile.gettempdir(), "TekQuickStart_Build_Temp")
+LOCAL_BUILD_ROOT = os.path.join(tempfile.gettempdir(), "SAITEK_QuickStart_Build_Temp")
 LOCAL_DIST_DIR = os.path.join(LOCAL_BUILD_ROOT, "dist")
-LOCAL_PORTABLE_DIR = os.path.join(LOCAL_DIST_DIR, "TekQuickStart_Portable")
-PAYLOAD_ZIP = os.path.join(LOCAL_BUILD_ROOT, "TekQuickStart_Payload.zip")
+LOCAL_PORTABLE_DIR = os.path.join(LOCAL_DIST_DIR, PORTABLE_FOLDER_NAME)
+PAYLOAD_ZIP = os.path.join(LOCAL_BUILD_ROOT, PAYLOAD_ZIP_NAME)
 
 INSTALLER_SCRIPT = os.path.join(BASE_DIR, "04.tools", "01.Scripts", "installer_gui.py")
 MAIN_APP_SCRIPT = os.path.join(SRC_DIR, "06.Main", "main_app.py")
@@ -96,7 +101,7 @@ def run_step(cmd: list[str], desc: str) -> None:
 
 
 def step1_build_main_executable() -> None:
-    """Compiles 02.src/06.Main/main_app.py into TekQuickStart_Portable/TekQuickStart.exe."""
+    """Compiles 02.src/06.Main/main_app.py into SAITEK Tektronix Quick Start SW_Portable/SAITEK Tektronix Quick Start SW.exe."""
     if os.path.exists(LOCAL_BUILD_ROOT):
         shutil.rmtree(LOCAL_BUILD_ROOT, ignore_errors=True)
     os.makedirs(LOCAL_DIST_DIR, exist_ok=True)
@@ -116,7 +121,7 @@ def step1_build_main_executable() -> None:
         "--onedir",
         "--windowed",
         "--name",
-        "TekQuickStart",
+        APP_NAME,
         "--distpath",
         LOCAL_DIST_DIR,
         "--workpath",
@@ -154,9 +159,9 @@ def step1_build_main_executable() -> None:
         cmd.extend(["--exclude-module", ex])
 
     cmd.append(MAIN_APP_SCRIPT)
-    run_step(cmd, "Stage 1: Compile Standalone Executable (TekQuickStart.exe)")
+    run_step(cmd, f"Stage 1: Compile Standalone Executable ({APP_NAME}.exe)")
 
-    built_folder = os.path.join(LOCAL_DIST_DIR, "TekQuickStart")
+    built_folder = os.path.join(LOCAL_DIST_DIR, APP_NAME)
     if os.path.exists(built_folder):
         os.rename(built_folder, LOCAL_PORTABLE_DIR)
 
@@ -169,7 +174,7 @@ def step1_build_main_executable() -> None:
     src_manuals = os.path.join(BASE_DIR, "01.docs", "10. Tek_Manuals")
     dst_manuals = os.path.join(LOCAL_PORTABLE_DIR, "01.docs", "10. Tek_Manuals")
     if os.path.exists(src_manuals):
-        print(f"[COPY] Bundling 26 PDF manuals -> {dst_manuals}")
+        print(f"[COPY] Bundling 30 PDF manuals -> {dst_manuals}")
         shutil.copytree(src_manuals, dst_manuals, dirs_exist_ok=True)
 
     os.makedirs(os.path.join(LOCAL_PORTABLE_DIR, "05.data", "02.Processed"), exist_ok=True)
@@ -204,7 +209,7 @@ def step2_create_payload_zip() -> None:
 
 
 def step3_build_setup_installer() -> None:
-    """Compiles installer_gui.py + TekQuickStart_Payload.zip into single-file TekQuickStart_Setup.exe."""
+    """Compiles installer_gui.py + SAITEK Tektronix Quick Start SW_Payload.zip into single-file SAITEK Tektronix Quick Start SW_Setup.exe."""
     add_data_arg = f"{PAYLOAD_ZIP};."
     cmd = [
         sys.executable,
@@ -215,7 +220,7 @@ def step3_build_setup_installer() -> None:
         "--onefile",
         "--windowed",
         "--name",
-        "TekQuickStart_Setup",
+        SETUP_EXE_NAME,
         "--distpath",
         LOCAL_DIST_DIR,
         "--workpath",
@@ -229,23 +234,34 @@ def step3_build_setup_installer() -> None:
         cmd.extend(["--exclude-module", ex])
 
     cmd.append(INSTALLER_SCRIPT)
-    run_step(cmd, "Stage 3: Compile Self-Contained Single-File Setup Installer (TekQuickStart_Setup.exe)")
+    run_step(cmd, f"Stage 3: Compile Self-Contained Single-File Setup Installer ({SETUP_EXE_NAME}.exe)")
 
 
 def step4_publish_to_release_dir() -> None:
-    """Copies the built TekQuickStart_Setup.exe and TekQuickStart_Portable into 06.Release."""
+    """Copies the built SAITEK Tektronix Quick Start SW_Setup.exe and SAITEK Tektronix Quick Start SW_Portable into 06.Release."""
     print(f"\n{'=' * 76}")
     print(f"[BUILD] Stage 4: Publishing Release Artifacts to {RELEASE_DIR}")
     print(f"{'=' * 76}")
 
-    # Clean up any leftover partial build in RELEASE_DIR
-    for stale_name in ("TekQuickStart", "TekQuickStart_Portable"):
+    # Clean up any leftover partial or legacy build in RELEASE_DIR
+    for stale_name in (
+        "TekQuickStart",
+        "TekQuickStart_Portable",
+        "TekQuickStart_Setup.exe",
+        APP_NAME,
+        PORTABLE_FOLDER_NAME,
+    ):
         stale_p = os.path.join(RELEASE_DIR, stale_name)
-        if os.path.exists(stale_p):
+        if os.path.isdir(stale_p):
             shutil.rmtree(stale_p, ignore_errors=True)
+        elif os.path.isfile(stale_p):
+            try:
+                os.remove(stale_p)
+            except OSError:
+                pass
 
-    local_setup_exe = os.path.join(LOCAL_DIST_DIR, "TekQuickStart_Setup.exe")
-    target_setup_exe = os.path.join(RELEASE_DIR, "TekQuickStart_Setup.exe")
+    local_setup_exe = os.path.join(LOCAL_DIST_DIR, f"{SETUP_EXE_NAME}.exe")
+    target_setup_exe = os.path.join(RELEASE_DIR, f"{SETUP_EXE_NAME}.exe")
 
     # Copy single-file Setup Installer
     with open(local_setup_exe, "rb") as fsrc, open(target_setup_exe, "wb") as fdst:
@@ -256,7 +272,7 @@ def step4_publish_to_release_dir() -> None:
             fdst.write(chunk)
     print(f"[OK] Published Setup Installer -> {target_setup_exe}")
 
-    # Extract payload directly into 06.Release\TekQuickStart_Portable (uses small buffered writes)
+    # Extract payload directly into 06.Release\SAITEK Tektronix Quick Start SW_Portable
     os.makedirs(PORTABLE_DIR, exist_ok=True)
     with zipfile.ZipFile(PAYLOAD_ZIP, "r") as zf:
         zf.extractall(PORTABLE_DIR)
@@ -279,8 +295,8 @@ def main() -> int:
     step4_publish_to_release_dir()
     cleanup_temp()
 
-    exe_path = os.path.join(PORTABLE_DIR, "TekQuickStart.exe")
-    setup_path = os.path.join(RELEASE_DIR, "TekQuickStart_Setup.exe")
+    exe_path = os.path.join(PORTABLE_DIR, f"{APP_NAME}.exe")
+    setup_path = os.path.join(RELEASE_DIR, f"{SETUP_EXE_NAME}.exe")
     setup_mb = os.path.getsize(setup_path) / (1024 * 1024) if os.path.exists(setup_path) else 0.0
 
     print(f"\n{'=' * 76}")

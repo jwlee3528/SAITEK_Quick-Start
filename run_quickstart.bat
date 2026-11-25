@@ -1,8 +1,8 @@
 @echo off
 chcp 65001 > nul
 echo ===============================================================
-echo   Tektronix ^& Keithley QuickStart Program Launcher
-echo   7 Manual Categories Integrated Control ^& Measurement Suite
+echo   SAITEK Tektronix Quick Start SW Launcher
+echo   8 Manual Categories Integrated Control ^& Measurement Suite
 echo ===============================================================
 cd /d "%~dp0"
 python "02.src\06.Main\main_app.py"

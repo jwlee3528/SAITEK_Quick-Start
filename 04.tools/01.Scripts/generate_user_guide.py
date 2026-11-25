@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 r"""
-Tektronix & Keithley Multi-Category QuickStart Program
+SAITEK Tektronix Quick Start SW
 Beginner-Friendly GUI User Guide Generator (PPTX + PDF + Annotated GUI Screenshots)
 
 Captures real live GUI screenshots from the PyQt6 application, adds numbered
 visual callout badges (1, 2, 3...) and highlight boxes, and generates:
-1. 01.docs\06.development_guides\TekQuickStart_Beginner_User_Guide.pptx (PowerPoint)
-2. 01.docs\06.development_guides\TekQuickStart_Beginner_User_Guide.pdf  (PDF Manual)
-3. Copies of both in 06.Release\ for easy distribution alongside TekQuickStart_Setup.exe
+1. 01.docs\06.development_guides\SAITEK Tektronix Quick Start SW_Beginner_User_Guide.pptx (PowerPoint)
+2. 01.docs\06.development_guides\SAITEK Tektronix Quick Start SW_Beginner_User_Guide.pdf  (PDF Manual)
+3. Copies of both in 06.Release\ for easy distribution alongside SAITEK Tektronix Quick Start SW_Setup.exe
 """
 
 import os
@@ -54,8 +54,8 @@ GUIDE_DIR = os.path.join(BASE_DIR, "01.docs", "06.development_guides")
 SCREENSHOT_DIR = os.path.join(GUIDE_DIR, "screenshots")
 RELEASE_DIR = os.path.join(BASE_DIR, "06.Release")
 
-PPTX_PATH = os.path.join(GUIDE_DIR, "TekQuickStart_Beginner_User_Guide.pptx")
-PDF_PATH = os.path.join(GUIDE_DIR, "TekQuickStart_Beginner_User_Guide.pdf")
+PPTX_PATH = os.path.join(GUIDE_DIR, "SAITEK Tektronix Quick Start SW_Beginner_User_Guide.pptx")
+PDF_PATH = os.path.join(GUIDE_DIR, "SAITEK Tektronix Quick Start SW_Beginner_User_Guide.pdf")
 
 
 def get_pil_font(size: int, bold: bool = True) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
@@ -194,7 +194,7 @@ def create_beginner_guide_popup_image(item_spec: Any, model_name: str, out_path:
 
 
 def create_installer_preview_image(out_path: str) -> str:
-    """Renders a high-res visual mockup of the TekQuickStart_Setup.exe GUI Wizard with annotations."""
+    """Renders a high-res visual mockup of the SAITEK Tektronix Quick Start SW_Setup.exe GUI Wizard with annotations."""
     w, h = 960, 620
     img = Image.new("RGB", (w, h), (15, 23, 42))
     draw = ImageDraw.Draw(img)
@@ -207,15 +207,15 @@ def create_installer_preview_image(out_path: str) -> str:
 
     # Window title bar
     draw.rectangle([0, 0, w, 36], fill=(30, 41, 59))
-    draw.text((14, 7), "Tektronix & Keithley QuickStart Program v1.2 - 통합 설치 마법사 (TekQuickStart_Setup.exe)", fill=(248, 250, 252), font=f_sub)
+    draw.text((14, 7), "SAITEK Tektronix Quick Start SW - 통합 설치 마법사 (SAITEK Tektronix Quick Start SW_Setup.exe)", fill=(248, 250, 252), font=f_sub)
 
     # Top Header Banner
     draw.rounded_rectangle([20, 50, w - 20, 140], radius=8, fill=(30, 41, 59), outline=(56, 189, 248), width=2)
-    draw.text((36, 62), "⚡ Tektronix & Keithley QuickStart Program 통합 설치 마법사", fill=(56, 189, 248), font=f_title)
+    draw.text((36, 62), "⚡ SAITEK Tektronix Quick Start SW 통합 설치 마법사", fill=(56, 189, 248), font=f_title)
     draw.text(
         (36, 94),
         "다른 PC에 Python이나 별도 패키지가 전혀 설치되어 있지 않아도 실행에 필요한 모든 런타임 파일,\n"
-        "8개 장비 폴더별 30종 PDF 매뉴얼, 가상 시뮬레이터 및 실행 파일(TekQuickStart.exe)을 한 번에 설치합니다.",
+        "8개 장비 폴더별 30종 PDF 매뉴얼, 가상 시뮬레이터 및 실행 파일(SAITEK Tektronix Quick Start SW.exe)을 한 번에 설치합니다.",
         fill=(203, 213, 225),
         font=f_sub,
     )
@@ -225,10 +225,10 @@ def create_installer_preview_image(out_path: str) -> str:
     draw.text((34, 163), "📦 설치 포함 구성 요소 (Included Components)", fill=(56, 189, 248), font=f_sec)
     draw.text(
         (38, 192),
-        "• 실행 파일 (TekQuickStart.exe) + 내장 Python / PyQt6 / PyQtGraph / NumPy / OpenPyXL / PyVISA-py 엔진\n"
-        "• 8대 계측기 폴더별 모듈 (01.AFGs / 02.DC Power / 03.MP5000 / 04.Scopes / 05.RSA / 06.SMUs / 07.Tek VISA / 08.DMM)\n"
+        "• 실행 파일 (SAITEK Tektronix Quick Start SW.exe) + 내장 Python / PyQt6 / PyQtGraph / NumPy / OpenPyXL / PyVISA-py 엔진\n"
+        "• 8대 계측기 폴더별 모듈 (01.AFGs / 02.DC Power / 03.DMM / 04.Scopes / 05.RSA / 06.SMUs / 07.DC Precision / 08.Tek VISA)\n"
         "• 초보자용 단계별 장비 연결 점검 마법사 + 30종 공식 프로그래머 매뉴얼 PDF 원본 (01.docs/10. Tek_Manuals)\n"
-        "• 물리 엔진 기반 가상 장비 시뮬레이터 ([VIRTUAL] 모드) + Run History 비교 + Excel/CSV/PNG 자동 리포트 출력기",
+        "• 다채널 스코프 동시 파형 비교 + 그래프/표 새 창 분리(Pop-Out) + Run History 비교 + Excel/CSV/PNG 리포트 출력기",
         fill=(226, 232, 240),
         font=f_sub,
     )
@@ -237,16 +237,16 @@ def create_installer_preview_image(out_path: str) -> str:
     draw.rounded_rectangle([20, 300, w - 20, 385], radius=8, fill=(15, 23, 42), outline=(71, 85, 105), width=2)
     draw.text((34, 308), "📁 설치 폴더 선택 (Installation Directory)", fill=(56, 189, 248), font=f_sec)
     draw.rounded_rectangle([36, 338, w - 180, 372], radius=4, fill=(30, 41, 59), outline=(100, 116, 139), width=1)
-    draw.text((48, 346), r"C:\TekQuickStart", fill=(248, 250, 252), font=f_mono)
+    draw.text((48, 346), r"C:\SAITEK Tektronix Quick Start SW", fill=(248, 250, 252), font=f_mono)
     draw.rounded_rectangle([w - 168, 338, w - 36, 372], radius=4, fill=(51, 65, 85))
     draw.text((w - 152, 346), "폴더 찾아보기...", fill=(248, 250, 252), font=f_sub)
 
     # Shortcut Options Box
     draw.rounded_rectangle([20, 400, w - 20, 505], radius=8, fill=(15, 23, 42), outline=(71, 85, 105), width=2)
     draw.text((34, 408), "⚙️ 바로가기 및 실행 옵션 (Shortcut & Launch Options)", fill=(56, 189, 248), font=f_sec)
-    draw.text((42, 436), "☑ 바탕화면에 [Tektronix QuickStart] 실행 바로가기 아이콘 생성 (권장)", fill=(226, 232, 240), font=f_sub)
-    draw.text((42, 458), "☑ Windows 시작 메뉴에 [Tektronix QuickStart] 프로그램 등록", fill=(226, 232, 240), font=f_sub)
-    draw.text((42, 480), "☑ 설치 완료 후 Tektronix QuickStart 프로그램 즉시 실행 (TekQuickStart.exe)", fill=(226, 232, 240), font=f_sub)
+    draw.text((42, 436), "☑ 바탕화면에 [SAITEK Tektronix Quick Start SW] 실행 바로가기 아이콘 생성 (권장)", fill=(226, 232, 240), font=f_sub)
+    draw.text((42, 458), "☑ Windows 시작 메뉴에 [SAITEK Tektronix Quick Start SW] 프로그램 등록", fill=(226, 232, 240), font=f_sub)
+    draw.text((42, 480), "☑ 설치 완료 후 SAITEK Tektronix Quick Start SW 즉시 실행 (SAITEK Tektronix Quick Start SW.exe)", fill=(226, 232, 240), font=f_sub)
 
     # Progress & Bottom Buttons
     draw.text((24, 518), "✅ 설치 준비 완료: [프로그램 설치 시작] 버튼을 클릭하면 모든 파일이 자동 설치됩니다.", fill=(167, 243, 208), font=f_sub)
@@ -263,7 +263,7 @@ def create_installer_preview_image(out_path: str) -> str:
     annotate_image_ratio(
         out_path,
         [
-            (1, (0.02, 0.48, 0.98, 0.62), "설치할 폴더 경로 확인 (기본값 C:\\TekQuickStart)"),
+            (1, (0.02, 0.48, 0.98, 0.62), "설치할 폴더 경로 확인 (기본값 C:\\SAITEK Tektronix Quick Start SW)"),
             (2, (0.02, 0.645, 0.98, 0.815), "바탕화면 바로가기 & 설치 후 즉시 실행 체크"),
             (3, (0.675, 0.915, 0.98, 0.985), "[프로그램 설치 시작] 클릭 -> 원클릭 설치 완료"),
         ],
@@ -284,7 +284,7 @@ def create_excel_report_preview_image(out_path: str) -> str:
 
     # Excel Green Banner
     draw.rectangle([0, 0, w, 54], fill=(21, 128, 61))
-    draw.text((20, 14), "📊 Tektronix QuickStart - 자동 생성 4-시트 Excel (.xlsx) 측정 리포트 구성도", fill=(255, 255, 255), font=f_title)
+    draw.text((20, 14), "📊 SAITEK Tektronix Quick Start SW - 자동 생성 4-시트 Excel (.xlsx) 측정 리포트 구성도", fill=(255, 255, 255), font=f_title)
 
     cards = [
         (
@@ -352,6 +352,12 @@ def simulate_panel_ticks(panel: Any, n_ticks: int = 8, keep_running: bool = Fals
     """Runs n_ticks of simulated measurement on a CategoryWorkspacePanel for rich GUI screenshots."""
     for cb in panel.checklist_widgets.values():
         cb.setChecked(True)
+    # For Oscilloscopes, enable CH1 and CH2 simultaneously to showcase multi-channel waveform overlay
+    if panel.profile.folder_id == "04_OSCILLOSCOPE":
+        ch_w = panel.input_widgets.get("channel")
+        if ch_w is not None and hasattr(ch_w, "_multi_checkboxes"):
+            for idx_cb, cb in enumerate(getattr(ch_w, "_multi_checkboxes")):
+                cb.setChecked(idx_cb in (0, 1))
     selected_meas = panel.collect_selected_measurables()
     inputs = panel.collect_inputs()
     model = panel.get_current_model()
@@ -449,13 +455,13 @@ def capture_all_gui_screenshots() -> Dict[str, str]:
     annotate_image_ratio(
         p_main_overview,
         [
-            (1, (0.006, 0.006, 0.994, 0.056), "(1) 상단 VISA 연결 바 ([시뮬레이션 모드] / 실제 장비 연결 / 사전 준비 점검표 / 긴급 정지)"),
-            (2, (0.006, 0.062, 0.81, 0.098), "(2) 7대 장비 폴더별 탭 (01.AFGs ~ 07.Tek VISA)"),
+            (1, (0.006, 0.006, 0.994, 0.056), "(1) 상단 바 (SSAITEK 로고 / VISA 연결 / 사전 준비 점검표 / 화면 맞춤 / [📞 기술 문의] / 긴급 정지)"),
+            (2, (0.006, 0.062, 0.96, 0.098), "(2) 8대 장비 분류 탭 (01.AFGs / 02.DC Power / 03.DMM / 04.Scopes / 05.Spectrum / 06.SMUs / 07.DC Precision / 08.Tek VISA)"),
             (3, (0.012, 0.195, 0.988, 0.425), "(3) 초보자용 단계별 리모트 준비 사항 점검표 (항목별 가이드 & 개별 상태 확인)"),
             (4, (0.012, 0.445, 0.255, 0.765), "(4) 좌측: 1. 입력이 필요한 사항 (Required Input Parameters)"),
             (5, (0.260, 0.445, 0.515, 0.765), "(5) 중앙: 2. 측정이 가능한 부분 (Measurable Items & 실시간 값)"),
-            (6, (0.520, 0.445, 0.988, 0.765), "(6) 우측: 3. 측정 제어(시작/일시정지/완전정지/Excel) & 실시간 파형 그래프"),
-            (7, (0.006, 0.785, 0.994, 0.968), "(7) 하단 콘솔: 직접 SCPI/TSP 명령어 송수신(Write/Query) 및 실시간 통신 로그"),
+            (6, (0.520, 0.445, 0.988, 0.765), "(6) 우측: 3. 측정 제어 & 실시간 그래프/데이터 표 ([🗗 그래프/표 새 창 분리] 지원)"),
+            (7, (0.006, 0.785, 0.994, 0.992), "(7) 하단 콘솔: 직접 SCPI/TSP 명령 송수신 로그 & 우측 하단 [사이텍(주) 기술 문의 연락처]"),
         ],
     )
     paths["main_overview"] = p_main_overview
@@ -556,12 +562,13 @@ def capture_all_gui_screenshots() -> Dict[str, str]:
     panel_hist.plot_tabs.setCurrentIndex(0)
 
     # 5. Capture active measurement screens for key categories (with checklist folded so graph & table are large!)
+    # Current tab order: 0: 01_AFG, 1: 02_DC_POWER, 2: 08_DMM (03. DMM), 3: 04_OSCILLOSCOPE, 4: 05_SPECTRUM, 5: 06_SMU, 6: 03_DC_PRECISION (07. DC Precision test), 7: 07_TEK_VISA (08. Tek VISA)
     tab_configs = [
         (1, "02_DC_Power", "06_cat02_dcpower.png", "02. DC power Supplies - 전압/전류/전력(W) 실시간 트렌드 그래프 & 데이터 표"),
-        (3, "04_Oscilloscopes", "07_cat04_oscilloscope.png", "04. Oscilloscopes - 실시간 오실로스코프 파형 캡처 및 Vpp/주파수 자동 계측"),
+        (2, "08_DMM", "09b_cat08_dmm.png", "03. DMM (DMM6500/7510/2110/2010) - 고정밀 전압/저항/디지타이저 고속 측정"),
+        (3, "04_Oscilloscopes", "07_cat04_oscilloscope.png", "04. Oscilloscopes - 다채널(CH1~CH4) 동시 파형 캡처 및 Vpp/주파수 자동 계측"),
         (4, "05_Spectrum_Analyzers", "08_cat05_spectrum.png", "05. Spectrum Analyzers - RF 스펙트럼 트레이스(dBm) 및 피크 주파수 탐색"),
         (5, "06_SMUs", "09_cat06_smu.png", "06. SMUs (Keithley 2450/2600B) - 정밀 I-V 스윕 곡선 및 저항/전력 측정"),
-        (7, "08_DMM", "09b_cat08_dmm.png", "08. Digit Multimeter (DMM6500/7510/2110/2010) - 고정밀 전압/저항/디지타이저 측정"),
     ]
 
     for tab_idx, alias_key, fname, desc_label in tab_configs:
@@ -586,6 +593,29 @@ def capture_all_gui_screenshots() -> Dict[str, str]:
         )
         paths[alias_key] = out_p
 
+    # 5b. Capture Detachable Pop-Out Graph Window screenshot on Oscilloscope (CH1+CH2 multi-channel waveform)
+    main_win.category_tabs.setCurrentIndex(3)
+    scope_panel = main_win.category_panels[cat_keys[3]]
+    scope_panel.toggle_detach_graph()
+    QApplication.processEvents()
+    p_detached = os.path.join(SCREENSHOT_DIR, "13_detached_graph_window.png")
+    if scope_panel.graph_float_dialog is not None:
+        scope_panel.graph_float_dialog.resize(1120, 680)
+        QApplication.processEvents()
+        grab_widget_png(scope_panel.graph_float_dialog, p_detached)
+        annotate_image_ratio(
+            p_detached,
+            [
+                (1, (0.01, 0.01, 0.80, 0.075), "[1] 독립된 새 창으로 분리된 실시간 그래프 (보조 모니터 이동 및 전체 화면 최대화 가능)"),
+                (2, (0.81, 0.01, 0.99, 0.075), "[2] [↙ 원래 화면으로 복귀 (Dock)] 클릭 또는 창 닫기(X) 시 메인 화면으로 즉시 복귀"),
+                (3, (0.01, 0.082, 0.99, 0.145), "[3] 분리된 창에서도 커서 추가 / 구간 통계 / 시리즈 표시·숨김 / 축 범위 도구 그대로 사용"),
+                (4, (0.01, 0.155, 0.99, 0.985), "[4] 대화면 다중 채널(CH1 + CH2) 실시간 파형 오버레이 및 측정 루프 무중단 갱신"),
+            ],
+        )
+        scope_panel.toggle_detach_graph()
+        QApplication.processEvents()
+    paths["detached_window"] = p_detached
+
     main_win.close()
 
     # 6. Excel Report 4-sheet preview
@@ -602,16 +632,16 @@ def get_guide_pages(screenshots: Dict[str, str]) -> List[Dict[str, Any]]:
         {
             "page_no": 1,
             "badge": "초보자용 완벽 매뉴얼",
-            "title": "Tektronix & Keithley QuickStart Program v1.2 사용자 가이드",
+            "title": "SAITEK Tektronix Quick Start SW 사용자 가이드",
             "subtitle": "설치(Setup.exe)부터 8대 제품군 장비 연결·사전 점검·실시간 측정·그래프·Run History·Excel 저장까지 초보자용 단계별 안내서",
             "image": screenshots["main_overview"],
             "steps": [
                 ("목적", "계측기 프로그래밍이나 SCPI/TSP 명령어를 전혀 모르는 초보자도 안내 화면만 따라 하면 8대 제품군 계측기를 안전하게 연결하고 측정·저장할 수 있습니다."),
-                ("설치 파일 배포", "다른 PC에 Python이나 라이브러리가 전혀 없어도 TekQuickStart_Setup.exe 설치 파일 하나로 모든 필수 파일과 30종 PDF 매뉴얼이 자동 설치됩니다."),
+                ("설치 파일 배포", "다른 PC에 Python이나 라이브러리가 전혀 없어도 SAITEK Tektronix Quick Start SW_Setup.exe 설치 파일 하나로 모든 필수 파일과 30종 PDF 매뉴얼이 자동 설치됩니다."),
                 ("가상 연습 모드 기본 내장", "실제 장비가 책상에 없어도 [VIRTUAL] 가상 시뮬레이션 모드로 모든 장비의 파형과 측정 동작을 100% 동일하게 연습할 수 있습니다."),
                 ("4단계 안전 워크플로우", "① 사전 준비 점검 마법사 → ② 입력 파라미터 & 측정 항목 설정 → ③ 동작 전 최종 확인 팝업 → ④ 실시간 그래프 측정 및 Excel(.xlsx) 저장"),
             ],
-            "tip": "💡 본 가이드는 실제 프로그램 GUI 화면에 표시된 번호([1], [2], [3]...) 순서대로만 클릭하면 누구나 즉시 측정할 수 있도록 구성되었습니다.",
+            "tip": "💡 본 가이드는 실제 SAITEK Tektronix Quick Start SW GUI 화면에 표시된 번호([1], [2], [3]...) 순서대로만 클릭하면 누구나 즉시 측정할 수 있도록 구성되었습니다.",
         },
         {
             "page_no": 2,
@@ -620,7 +650,7 @@ def get_guide_pages(screenshots: Dict[str, str]) -> List[Dict[str, Any]]:
             "subtitle": "docs >> Tek_Manuals 내 8개 폴더·30종 공식 프로그래머/레퍼런스 매뉴얼 기반 통합 퀵스타트 아키텍처",
             "image": screenshots["main_overview"],
             "steps": [
-                ("1. 8개 매뉴얼 폴더별 전용 탭 분리", "• 01. AFGs (함수발생기)  • 02. DC power Supplies  • 03. DC Precision Test (MP5000)  • 04. Oscilloscopes\n• 05. Spectrum Analyzers (RSA)  • 06. SMUs (소스미터)  • 07. Tek VISA  • 08. Digit Multimeter (DMM)"),
+                ("1. 8개 매뉴얼 폴더별 전용 탭 분리 (01 ~ 08)", "• 01. AFGs (함수발생기)  • 02. DC power Supplies  • 03. DMM (디지털 멀티미터)  • 04. Oscilloscopes\n• 05. Spectrum Analyzers (RSA)  • 06. SMUs (소스미터)  • 07. DC Precision test (MP5000)  • 08. Tek VISA"),
                 ("2. [입력 필수 사항]과 [측정 가능 항목] 분리", "장비에 인가할 설정값(주파수·전압·전류제한·NPLC 등)과 읽어올 측정 항목(전압·전류·저항·Vpp·피크파워 등)을 명확히 구분하고, 시작 전 확인 팝업으로 오동작을 방지합니다."),
                 ("3. 직관적인 측정 제어 & 그래프 & 엑셀", "• [▶ 측정 및 동작 시작]  • [⏸ 일시정지 / ▶ 재개]  • [⏹ 완전 정지 (출력 즉시 OFF 안전 차단)]\n• 우측 실시간 파형/트렌드 그래프(pyqtgraph), 커서 통계, Run History 비교 및 4-시트 Excel(.xlsx) 저장"),
                 ("4. 초보자용 단계별 장비 연결 점검표", "케이블 연결부터 장비 화면 메뉴 설정, 통신 응답(*IDN?, *LANG?, :ROUT:TERM?, 에러 큐)까지 항목별 [⚡ 상태 확인] 버튼으로 즉시 진단합니다."),
@@ -630,14 +660,14 @@ def get_guide_pages(screenshots: Dict[str, str]) -> List[Dict[str, Any]]:
         {
             "page_no": 3,
             "badge": "STEP 0 : 프로그램 설치",
-            "title": "다른 PC에 프로그램 설치하기 (TekQuickStart_Setup.exe)",
+            "title": "다른 PC에 프로그램 설치하기 (SAITEK Tektronix Quick Start SW_Setup.exe)",
             "subtitle": "아무것도 설치되지 않은 새 Windows PC에서 통합 설치 마법사로 원클릭 설치하는 방법",
             "image": screenshots["installer"],
             "steps": [
-                ("[1] 설치 폴더 경로 확인", "• 배포 폴더(06.Release)의 TekQuickStart_Setup.exe 파일을 실행합니다.\n• 기본 설치 경로는 C:\\TekQuickStart 이며, [폴더 찾아보기...] 버튼으로 원하는 위치로 변경할 수 있습니다."),
-                ("[2] 바로가기 및 자동 실행 옵션 선택", "• [바탕화면에 실행 바로가기 아이콘 생성]: 바탕화면에 'Tektronix QuickStart' 아이콘을 만듭니다.\n• [설치 완료 후 즉시 실행]: 설치가 끝나자마자 자동으로 프로그램을 띄워줍니다."),
-                ("[3] [🚀 프로그램 설치 시작] 버튼 클릭", "• 버튼을 클릭하면 내장된 실행 엔진(TekQuickStart.exe), 런타임 DLL, 26종 PDF 매뉴얼이 자동 압축 해제됩니다.\n• 설치 완료 메시지 확인 후 프로그램이 곧바로 실행됩니다."),
-                ("무설치(Portable) 실행 방법", "• 설치 과정 없이 06.Release\\TekQuickStart_Portable\\TekQuickStart.exe 파일을 직접 더블클릭해도 동일하게 실행됩니다."),
+                ("[1] 설치 폴더 경로 확인", "• 배포 폴더(06.Release)의 SAITEK Tektronix Quick Start SW_Setup.exe 파일을 실행합니다.\n• 기본 설치 경로는 C:\\SAITEK Tektronix Quick Start SW 이며, [폴더 찾아보기...] 버튼으로 원하는 위치로 변경할 수 있습니다."),
+                ("[2] 바로가기 및 자동 실행 옵션 선택", "• [바탕화면에 실행 바로가기 아이콘 생성]: 바탕화면에 'SAITEK Tektronix Quick Start SW' 아이콘을 만듭니다.\n• [설치 완료 후 즉시 실행]: 설치가 끝나자마자 자동으로 프로그램을 띄워줍니다."),
+                ("[3] [🚀 프로그램 설치 시작] 버튼 클릭", "• 버튼을 클릭하면 내장된 실행 엔진(SAITEK Tektronix Quick Start SW.exe), 런타임 DLL, 30종 PDF 매뉴얼이 자동 압축 해제됩니다.\n• 설치 완료 메시지 확인 후 프로그램이 곧바로 실행됩니다."),
+                ("무설치(Portable) 실행 방법", "• 설치 과정 없이 06.Release\\SAITEK Tektronix Quick Start SW_Portable\\SAITEK Tektronix Quick Start SW.exe 파일을 직접 더블클릭해도 동일하게 실행됩니다."),
             ],
             "tip": "💡 실제 장비를 USB 케이블로 연결할 PC라면 TekVISA 또는 NI-VISA 드라이버를 함께 설치해 두면 USB 장비가 자동 검색됩니다.",
         },
@@ -645,7 +675,7 @@ def get_guide_pages(screenshots: Dict[str, str]) -> List[Dict[str, Any]]:
             "page_no": 4,
             "badge": "STEP 1 : 첫 실행 연결 가이드 팝업 (1/3)",
             "title": "프로그램 첫 시작 시 뜨는 [초보자용 장비-PC 연결 가이드 팝업창] 전체 구조",
-            "subtitle": "TekQuickStart.exe를 실행하면 가장 먼저 열리는 연결 마법사 팝업창의 4단계(STEP 1 ~ STEP 4) 구성 안내",
+            "subtitle": "SAITEK Tektronix Quick Start SW.exe를 실행하면 가장 먼저 열리는 연결 마법사 팝업창의 4단계(STEP 1 ~ STEP 4) 구성 안내",
             "image": screenshots["startup_wizard"],
             "steps": [
                 ("[1] STEP 1. 연결할 장비 종류(8개 폴더)와 세부 모델 선택", "• ① 장비 분류(01.AFGs ~ 08.Digit Multimeter)와 ② 세부 장비 모델을 선택합니다.\n• 선택 즉시 아래 파란색 요약 박스에 해당 모델의 [지원 연결 인터페이스(USB/LAN/GPIB)], [채널 수], [매뉴얼 핵심 연결 안내]가 자동 표시되며, 우측 [📖 선택 모델 PDF 매뉴얼 열기]로 원본 매뉴얼을 바로 볼 수 있습니다."),
@@ -690,10 +720,10 @@ def get_guide_pages(screenshots: Dict[str, str]) -> List[Dict[str, Any]]:
             "subtitle": "어떤 장비 탭을 선택하든 동일한 위치와 사용법으로 통일된 6대 작업 영역",
             "image": screenshots["main_overview"],
             "steps": [
-                ("① 상단 VISA 리소스 연결 바 & ② 장비 폴더 탭", "• ① 상단 바에서 연결할 장비 주소를 고르고 [🔗 연결], [🆔 *IDN? 조회], [🔄 *RST 리셋]을 수행합니다.\n• ② 바로 아래 7개 탭(01.AFGs ~ 07.Tek VISA) 중 사용할 장비 폴더를 클릭해 전환합니다."),
-                ("③ 좌측 패널 (모델·점검표·입력 파라미터)", "• 사용할 세부 장비 모델 선택 및 [📖 매뉴얼 열기]\n• 해당 장비의 [사전 준비 점검표] 및 장비에 설정할 [사용자 입력 필수 파라미터] 입력 폼이 위치합니다."),
-                ("④ 중앙 패널 (측정 항목 & 시작/일시정지/정지)", "• 장비에서 읽어올 [측정 가능 항목 (Measurable Items)] 체크박스 목록\n• [▶ 측정 시작], [⏸ 일시정지], [⏹ 완전 정지], [📊 Excel(.xlsx) 저장] 제어 버튼이 모여 있습니다."),
-                ("⑤ 우측 그래프/데이터 표 & ⑥ 하단 I/O 콘솔", "• ⑤ 우측에는 실시간 파형/트렌드 그래프와 시계열 측정값 표가 실시간 업데이트됩니다.\n• ⑥ 하단 콘솔에서는 모든 SCPI/TSP 송수신 명령어 로그와 응답 시간(ms)을 투명하게 확인할 수 있습니다."),
+                ("① 상단 VISA 리소스 연결 바(SSAITEK 로고) & ② 8개 장비 분류 탭", "• ① 좌측 상단 SSAITEK 로고 옆에서 VISA 리소스 주소를 선택하고 [🔗 장비 연결], [📋 사전 준비 점검표], [🖥️ 화면 맞춤], [📞 기술 문의], [🚨 긴급 정지]를 수행합니다.\n• ② 바로 아래 8개 탭(01.AFGs / 02.DC power Supplies / 03.DMM / 04.Oscilloscopes / 05.Spectrum Analyzers / 06.SMUs / 07.DC Precision test / 08.Tek VISA)을 클릭해 전환합니다."),
+                ("③ 좌측 패널 (모델·점검표·입력 파라미터)", "• 사용할 세부 장비 모델 선택, [📖 PDF 매뉴얼], [🔍 상태 확인 (*IDN?)] 및 [☑ 체크리스트 접기/펼치기]\n• 장비에 설정할 [1. 입력이 필요한 사항 (Required Input Parameters)] 입력 폼이 위치합니다."),
+                ("④ 중앙 패널 (측정 가능 항목 & 실시간 수치 카드)", "• 장비에서 읽어올 [2. 측정이 가능한 부분 (Measurable Items)] 체크박스 및 실시간 측정값 카드 목록\n• 하단에는 선택된 장비 모델의 매뉴얼 핵심 리모트 주의사항이 상시 표시됩니다."),
+                ("⑤ 우측 그래프/데이터 표(새 창 분리 지원) & ⑥ 하단 I/O 콘솔", "• ⑤ 우측에는 [▶ 측정 시작 / ⏸ 일시정지 / ⏹ 완전 정지 / 💾 Excel 저장] 버튼과 실시간 그래프·데이터 표가 위치하며, [🗗 그래프 새 창 분리] / [🗗 데이터 표 새 창 분리]로 다른 모니터에 크게 띄울 수 있습니다.\n• ⑥ 하단에는 SCPI/TSP 명령어 송수신 로그와 우측 하단 [📞 기술 문의 : 사이텍(주) | ssaitek@ssaitek.com | 041-698-4242]가 고정 표시됩니다."),
             ],
             "tip": "💡 각 영역 사이의 경계선(Splitter)을 마우스로 드래그하거나, 점검표/로그 표의 [접기] 버튼을 누르면 작은 노트북 화면에서도 넓게 쓸 수 있습니다.",
         },
@@ -754,44 +784,44 @@ def get_guide_pages(screenshots: Dict[str, str]) -> List[Dict[str, Any]]:
             "tip": "💡 새로운 조건으로 처음부터 다시 측정하고 싶다면 [🧹 그래프 및 데이터 초기화] 버튼을 눌러 표와 그래프를 깨끗이 비울 수 있습니다.",
         },
         {
-            "page_no": 11,
+            "page_no": 12,
             "badge": "장비별 실습 가이드 ①",
-            "title": "01. AFGs (함수발생기) & 02. DC Power / 03. MP5000 측정 실습",
-            "subtitle": "신호 발생기 파형 출력 및 직류 전원공급기 전압·전류·전력(W) 실시간 모니터링",
+            "title": "01. AFGs (함수발생기) · 02. DC power Supplies · 03. DMM 측정 실습",
+            "subtitle": "신호 발생기 파형 출력, 직류 전원공급기(2200/2260B) 출력 모니터링 및 DMM(DMM6500/7510/2110/2010) 고속 정밀 측정",
             "image": screenshots["02_DC_Power"],
             "steps": [
-                ("01. AFGs (AFG31000 / AFG3000C 시리즈)", "• [입력 파라미터]: 출력 채널(CH1/CH2), 파형 형태(SIN/SQU/RAMP/PULS), 주파수(Hz), 진폭(Vpp), 오프셋(V), 부하 임피던스(50Ω/High-Z) 설정\n• [실시간 그래프]: 설정한 주파수·진폭·파형에 따른 실시간 출력 파형 프리뷰 및 상태 확인"),
-                ("02. DC power Supplies (PWS4000 / Keithley 2280S / 2230G)", "• [입력 파라미터]: 목표 출력 전압(V), 과전류 보호 제한값(Current Limit A), 과전압 보호(OVP V) 설정\n• [측정 항목 & 그래프]: 실제 부하에 공급되는 전압(V), 전류(A), 소비 전력(W)의 실시간 시계열 트렌드 그래프"),
-                ("03. DC Precision Test (MP5000 모듈형 시스템)", "• [특징]: Keithley TSP(Test Script Processor) 명령어 체계(slot[1].smu / psu) 자동 지원\n• [점검 포인트]: 사전 준비 점검표에서 장비 명령어 세트가 TSP 모드로 설정되어 있는지 [⚡ 상태 확인]으로 검증"),
-                ("안전 정지 동작", "• 세 장비 모두 [⏹ 완전 정지] 클릭 시 즉시 출력(Output State)이 OFF로 전환되어 시험 대상 보드를 안전하게 보호합니다."),
+                ("01. AFGs (AFG31000 / AFG1000 / AFG2021 시리즈)", "• [입력 파라미터]: 출력 채널(CH1/CH2), 파형 형태(SIN/SQU/RAMP/PULS), 주파수(Hz), 진폭(Vpp), 오프셋(V), 부하 임피던스(50Ω/High-Z) 설정\n• [실시간 그래프]: 설정한 주파수·진폭·파형에 따른 실시간 출력 파형 프리뷰 및 상태 확인"),
+                ("02. DC power Supplies (Series 2200 / Series 2260B)", "• [입력 파라미터]: 목표 출력 전압(V), 전류 제한값(Current Limit A), 과전압 보호(OVP V), 슬루율 제어 모드 설정 (측정 중 실시간 전압/전류 변경 즉시 반영)\n• [측정 항목 & 그래프]: 실제 부하에 공급되는 전압(V), 전류(A), 소비 전력(W)의 실시간 시계열 트렌드 그래프"),
+                ("03. DMM (Keithley DMM6500 / DMM7510 / Model 2110 / Model 2010)", "• [입력 파라미터]: 측정 기능(DC/AC 전압·전류, 2W/4W 저항, 주파수, 온도, 커패시턴스, 1MS/s 디지타이저), NPLC(기본 0.1), AutoZero(ONCE/OFF/ON), 수집 주기(기본 0.05s) 설정\n• [측정 항목 & 그래프]: 주 측정값, 누적 평균(Mean), 변동폭(Pk-Pk), 표준편차, 활성 단자(FRON/REAR) 확인 및 고속 연속 측정"),
+                ("안전 정지 및 세션 자동 복구", "• 전원공급기/AFG는 [⏹ 완전 정지] 클릭 시 즉시 출력이 OFF로 차단되며, USB-CDC(ASRL) 통신 세션도 끊김 없이 연속 유지·자동 복구됩니다."),
             ],
-            "tip": "💡 전원공급기(02. DC Power) 사용 시에는 부하 회로의 최대 허용 전류보다 [전류 제한 (Current Limit)]을 약간 낮게 설정하는 것이 안전합니다.",
-        },
-        {
-            "page_no": 12,
-            "badge": "장비별 실습 가이드 ②",
-            "title": "04. Oscilloscopes (오실로스코프) & 05. Spectrum Analyzers 측정 실습",
-            "subtitle": "시간 영역 고속 파형 캡처(Vpp/Freq) 및 주파수 영역 RF 스펙트럼 피크(dBm/MHz) 분석",
-            "image": screenshots["05_Spectrum_Analyzers"],
-            "steps": [
-                ("04. Oscilloscopes (MSO2 / MSO4·5·6 / DPO4000B / TDS2000C)", "• [입력 파라미터]: 측정 소스 채널(CH1~CH4), 수직 스케일(V/div), 수평 타임베이스(s/div), 트리거 레벨(V) 설정\n• [측정 항목]: 첨두간 전압(Vpp), 주파수(Freq), 평균 전압(Mean), 실효치(RMS), 상승시간(Rise Time) 자동 계측\n• [실시간 그래프]: CURVe? 고속 바이너리/아스키 파형 데이터를 실시간으로 화면에 렌더링"),
-                ("05. Spectrum Analyzers (RSA306B/500A/600A & 5/6 시리즈 Spectrum View)", "• [입력 파라미터]: 중심 주파수(Center Freq MHz), 주파수 스팬(Span MHz), 기준 레벨(Ref Level dBm), RBW 설정\n• [측정 항목]: 피크 파워(Peak Power dBm), 피크 주파수(Peak Freq MHz), 채널 파워, OBW 계측\n• [실시간 그래프]: 주파수(MHz) 대 파워(dBm) RF 스펙트럼 트레이스 및 피크 마커 실시간 표시"),
-                ("USB 3.0 연결 주의사항 (RSA306B / RSA500A)", "• 휴대용 USB 스펙트럼 분석기는 파란색 USB 3.0 포트에 연결하고 SignalVu-PC가 실행 중이어야 VISA 통신이 활성화됩니다."),
-            ],
-            "tip": "💡 오실로스코프 파형이 화면 위아래로 잘릴 때는 좌측 입력 파라미터의 [수직 스케일 (V/div)] 값을 더 크게 늘려주면 됩니다.",
+            "tip": "💡 03. DMM에서 초고속 측정(초당 16~20회 이상)을 원할 때는 NPLC 0.1, AutoZero ONCE/OFF, 수집 주기 0.050s 기본값을 그대로 사용하세요.",
         },
         {
             "page_no": 13,
+            "badge": "장비별 실습 가이드 ②",
+            "title": "04. Oscilloscopes (다채널 동시 측정) & 05. Spectrum Analyzers 실습",
+            "subtitle": "오실로스코프 다중 채널(CH1~CH4) 동시 파형 오버레이·고속 계측 및 RF 스펙트럼 피크(dBm/MHz) 분석",
+            "image": screenshots["04_Oscilloscopes"],
+            "steps": [
+                ("04. Oscilloscopes 다중 채널 선택 (☑CH1 ☑CH2 ☑CH3 ☑CH4)", "• [다중 채널 동시 측정]: 측정 소스 채널에서 원하는 채널(CH1~CH4)을 여러 개 동시에 체크할 수 있습니다 (2채널 모델인 TBS1000C/MSO22 등은 모델 채널 수에 맞춰 자동 활성화).\n• [다중 파형 오버레이 & 채널별 표/Excel 분리]: 선택한 모든 채널의 실시간 파형이 한 그래프에 색상별로 겹쳐 그려지고, 표와 Excel에는 [CH1]/[CH2] 컬럼과 채널별 파형 열이 각각 분리 기록됩니다."),
+                ("실시간 파형 + 주파수/주기/진폭 동시 고속 측정 & Autoset 동기화", "• [실시간 파형 데이터]와 [주파수 / 주기 / Peak-to-Peak / 평균 / RMS]를 동시에 체크해도 타임아웃 없이 파형 배열 기반 고속 연산으로 설정 주기(예: 0.500s)에 맞춰 정확히 수집됩니다.\n• [시작 시 Autoset 실행 여부] 체크 시에도 오토셋 완료(*OPC?)를 자동 대기한 후 안전하게 측정을 시작합니다."),
+                ("05. Spectrum Analyzers (SignalVu-PC / RSA306B / RSA5000·6000)", "• 중심 주파수(MHz), 스팬(MHz), 기준 레벨(dBm), RBW를 설정하고 주파수 대 파워(dBm) 스펙트럼 트레이스와 최대 피크 마커를 실시간 추적합니다."),
+            ],
+            "tip": "💡 빠른 갱신 주기(0.2~0.5s)로 실시간 파형을 볼 때는 [파형 전송 포인트 수]를 1,000 pts로, 정밀 파형 저장 시에는 5,000~10,000 pts로 설정하세요.",
+        },
+        {
+            "page_no": 14,
             "badge": "장비별 실습 가이드 ③",
-            "title": "06. SMUs · 07. Tek VISA · 08. Digit Multimeter(DMM) 측정 실습",
-            "subtitle": "SMU I-V 특성 곡선, 범용 VISA 명령어 콘솔 및 5½~7½ 디지트 DMM(DMM6500/7510/2110/2010) 고정밀 측정",
+            "title": "06. SMUs · 07. DC Precision test (MP5000) · 08. Tek VISA 측정 실습",
+            "subtitle": "SMU I-V 특성 곡선, MP5000 모듈형 TSP 정밀 테스트 시스템 및 범용 TekVISA 명령어 루프 콘솔",
             "image": screenshots["08_DMM"],
             "steps": [
-                ("06. SMUs (Keithley 2450 / 2400 / 2600B 시리즈 SourceMeter)", "• [입력 파라미터]: 소스 모드(전압/전류), 스윕 범위(Start~Stop V), 컴플라이언스 한계(Limit A), 2선식/4선식 선택\n• [실시간 그래프]: 전압(V) 대 전류(A) I-V 특성 곡선 실시간 플로팅 및 저항(Ω)·전력(W) 자동 계산"),
-                ("08. Digit Multimeter (Keithley DMM6500 / DMM7510 / 2110 / 2010)", "• [입력 파라미터]: 측정 기능(DC/AC 전압·전류, 2선/4선 저항, 주파수, 온도, 커패시턴스, 1MS/s 디지타이저), NPLC, AutoZero 설정\n• [측정 항목 & 그래프]: 주 측정값, 누적 평균(Mean), 변동폭(Pk-Pk), 활성 단자(Front/Rear) 확인 및 디지타이저 파형 플로팅"),
-                ("07. Tek VISA & 하단 실시간 I/O 로그 콘솔", "• [07. Tek VISA]: 커스텀 SCPI/TSP 명령어를 반복 실행하며 응답 수치와 통신 지연 시간(Latency ms)을 연속 로깅합니다.\n• 어느 탭에서든 화면 하단 콘솔에서 *IDN?, :ROUT:TERM?, SYST:ERR? 등을 직접 Query하고 응답을 즉시 확인할 수 있습니다."),
+                ("06. SMUs (Keithley 2450 / 2460 / 2461 / 2470 / 2600B 시리즈 SourceMeter)", "• [입력 파라미터]: 소스 모드(전압/전류), 스윕 범위(Start~Stop V), 컴플라이언스 한계(Limit A), 2선식/4선식 선택\n• [실시간 그래프]: 전압(V) 대 전류(A) I-V 특성 곡선 실시간 플로팅 및 저항(Ω)·전력(W) 자동 계산"),
+                ("07. DC Precision test (MP5000 시리즈 모듈형 정밀 시스템)", "• [특징]: MP5103 메인프레임의 슬롯(Slot 1~3) 및 모듈(SMU / PSU)을 선택하여 Lua 기반 TSP(slot[Z].smu[X].*) 명령어로 정밀 소스·측정 및 스윕을 수행합니다.\n• [점검 포인트]: 사전 준비 점검표에서 LAN 보안 로그인(login?) 및 원격 제어권(remote?) 상태를 원클릭으로 검증합니다."),
+                ("08. Tek VISA & 하단 실시간 I/O 로그 콘솔", "• [08. Tek VISA]: 커스텀 SCPI/TSP 명령어를 반복 실행하며 응답 수치와 통신 지연 시간(Latency ms)을 연속 로깅합니다.\n• 하단 통신 로그 표는 증분 행 추가(Incremental Append) 방식으로 최적화되어 수백~수천 샘플 연속 측정 시에도 UI 지연 없이 즉시 갱신됩니다."),
             ],
-            "tip": "💡 DMM6500 / DMM7510 및 2450 SMU는 SCPI와 TSP 모드를 모두 지원하며, 'AUTO' 선택 시 *LANG?으로 현재 모드를 자동 감지합니다.",
+            "tip": "💡 SMU 및 MP5000은 고전압/전류 출력 장비이므로 측정 완료 시 반드시 [⏹ 완전 정지 (OFF)] 또는 상단 [🚨 긴급 정지]로 출력을 차단하세요.",
         },
         {
             "page_no": 14,
@@ -831,7 +861,22 @@ def get_guide_pages(screenshots: Dict[str, str]) -> List[Dict[str, Any]]:
                 ("[3] 표 컬럼 이름 변경 / 숨기기", "• 표의 컬럼 머리글을 우클릭하면 이름 변경, 숨기기, 숨김 해제, 초기화를 할 수 있고, 변경한 이름/숨김은 Excel·CSV 내보내기에도 반영됩니다."),
             ],
             "tip": "💡 실행 이력 탭의 비교 그래프에도 동일한 커서/축/시리즈 도구가 있어 Run 간 차이를 수치로 확인할 수 있습니다.",
-        },    ]
+        },
+        {
+            "page_no": 17,
+            "badge": "추가 기능 ③ : 그래프/표 새 창 분리 & 기술 문의",
+            "title": "그래프 및 데이터 테이블 개별 새 창 분리 (Pop-Out) & 사이텍(주) 기술 문의",
+            "subtitle": "그래프나 데이터 표를 별도 모니터로 옮겨 전체 화면으로 크게 보거나 기술 지원을 받는 방법",
+            "image": screenshots["detached_window"],
+            "steps": [
+                ("[1] [🗗 그래프 새 창 분리] & [🗗 데이터 표 새 창 분리]", "• 우측 측정 패널 상단의 [🗗 그래프 새 창 분리] (또는 커서 바 우측 [🗗 그래프 크게 보기 (새 창)]) 및 [🗗 데이터 표 새 창 분리] 버튼을 클릭합니다.\n• 그래프와 하단 측정 데이터 표를 각각 독립된 윈도우 창으로 떼어내어 보조 모니터로 이동하거나 최대화(전체 화면)하여 크게 볼 수 있습니다."),
+                ("[2] 측정 중 무중단 분리 및 [↙ 원래 화면으로 복귀]", "• 연속 측정 도중에 창을 분리하거나 다시 합쳐도 실시간 측정 루프와 그래프·표 갱신은 끊김 없이 그대로 유지됩니다.\n• 분리된 창 우측 상단의 [↙ 원래 화면으로 복귀 (Dock)] 버튼을 누르거나 창 닫기([X])를 누르면 언제든 원래 자리로 복귀합니다."),
+                ("[3] 분리된 창에서도 모든 커서·통계·컬럼 기능 동일 사용", "• 새 창으로 분리된 상태에서도 [➕ 커서 추가], 구간 통계(Min/Max/Mean/Pk-Pk), [👁 시리즈 표시/숨김], 표 컬럼 우클릭 편집이 모두 동일하게 동작합니다."),
+                ("[4] 기술 문의 안내 (사이텍(주) / SSAITEK)", "• 프로그램 상단 바의 [📞 기술 문의] 버튼 또는 화면 우측 하단 상태바에서 언제든 기술 지원 연락처를 확인할 수 있습니다.\n• 회사명: 사이텍(주)  |  E-mail: ssaitek@ssaitek.com  |  Tel: 041-698-4242"),
+            ],
+            "tip": "💡 그래프만 보조 모니터에 전체 화면으로 띄워 두면 메인 화면에서는 측정 데이터 테이블이 자동으로 위아래로 넓어져 훨씬 많은 행을 동시에 볼 수 있습니다.",
+        },
+    ]
 
 
 def build_powerpoint_guide(pages: List[Dict[str, Any]], out_pptx: str) -> str:
@@ -1162,6 +1207,17 @@ def main() -> int:
 
     print("[4/4] Copying PPTX and PDF User Guides to 06.Release folder...")
     if os.path.exists(RELEASE_DIR):
+        for old_f in (
+            "TekQuickStart_Beginner_User_Guide.pptx",
+            "TekQuickStart_Beginner_User_Guide.pdf",
+        ):
+            for folder_p in (GUIDE_DIR, RELEASE_DIR):
+                stale_doc = os.path.join(folder_p, old_f)
+                if os.path.exists(stale_doc):
+                    try:
+                        os.remove(stale_doc)
+                    except OSError:
+                        pass
         shutil.copy2(PPTX_PATH, os.path.join(RELEASE_DIR, os.path.basename(PPTX_PATH)))
         shutil.copy2(PDF_PATH, os.path.join(RELEASE_DIR, os.path.basename(PDF_PATH)))
         print(f"      Copied to: {RELEASE_DIR}")

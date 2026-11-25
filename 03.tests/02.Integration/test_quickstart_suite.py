@@ -271,7 +271,8 @@ class TestTekQuickStartSuite(unittest.TestCase):
         self.assertIsNone(scope_panel.table_float_dialog)
         self.assertTrue(scope_panel.lbl_table_detached.isHidden())
 
-        # Verify SAITEK logo and technical support contact display
+        # Verify SAITEK logo, program title, and technical support contact display
+        self.assertIn("SAITEK Tektronix Quick Start SW", win.windowTitle())
         self.assertIsNotNone(win.lbl_logo)
         self.assertIsNotNone(win.lbl_support_footer)
         self.assertIn("사이텍(주)", win.lbl_support_footer.text())

@@ -1,4 +1,4 @@
-# ⚡ SAITEK QuickStart — Tektronix & Keithley Device Quick Start SW (v1.2)
+# ⚡ SAITEK Tektronix Quick Start SW (v1.2.8)
 
 ![Python](https://img.shields.io/badge/Python-3.x-3776AB?style=flat-square&logo=python&logoColor=white)
 ![PyQt6](https://img.shields.io/badge/GUI-PyQt6%20%2B%20PyQtGraph-41CD52?style=flat-square&logo=qt&logoColor=white)
@@ -37,13 +37,13 @@
 | 폴더 / 탭 | 제품군 | 주요 지원 모델 및 특징 |
 | :--- | :--- | :--- |
 | **01. AFGs** | 임의 파형/함수 발생기 | AFG31000, AFG3000C 시리즈 등 (파형/주파수/진폭/임피던스 제어 및 실시간 프리뷰) |
-| **02. DC Power Supplies** | 프로그래머블 DC 전원공급기 | Series 2200, PWS4000, Keithley 2280S/2230G (전압/전류/전력 트렌드, OVP/OCP 보호) |
-| **03. DC Precision Test** | 모듈형 정밀 테스트 시스템 | Keithley MP5000 (TSP 스크립트 명령어 체계 자동 지원) |
-| **04. Oscilloscopes** | 디지털 오실로스코프 | 2/4/5/6 Series MSO, DPO4000B, TDS2000C (다중 채널 지원, 고속 파형 캡처, Vpp/주파수 자동 계측) |
-| **05. Spectrum Analyzers** | 실시간 스펙트럼 애널라이저 | RSA306B/500A/600A, SignalVu-PC, 5/6 Series Spectrum View (RF 트레이스, 피크 마커) |
-| **06. SMUs** | 소스미터 (SourceMeter) | Keithley 2450, 2400, 2600B 시리즈 (I-V 특성 곡선 실시간 플로팅, 2선/4선식 측정) |
-| **07. Tek VISA** | 범용 VISA 명령어 콘솔 | 커스텀 SCPI/TSP 명령어 송수신(Write/Query/Read) 및 응답 지연시간(ms) 로깅 |
-| **08. Digit Multimeter** | 정밀 디지털 멀티미터 | Keithley DMM6500, DMM7510, 2110, 2010 (5½~7½ 디지트 고정밀 측정, 1MS/s 디지타이저) |
+| **02. DC power Supplies** | 프로그래머블 DC 전원공급기 | Series 2200, Series 2260B (전압/전류/전력 트렌드, OVP/OCP 보호) |
+| **03. DMM** | 정밀 디지털 멀티미터 | Keithley DMM6500, DMM7510, 2110, 2010 (5½~7½ 디지트 고정밀 측정, 1MS/s 디지타이저) |
+| **04. Oscilloscopes** | 디지털 오실로스코프 | 2/3/4/5/6/7 Series MSO/DPO, TBS1000C/2000B (다중 채널 CH1~CH4 동시 파형 캡처, Vpp/주파수 자동 계측) |
+| **05. Spectrum Analyzers** | 실시간 스펙트럼 애널라이저 | RSA306B/500A/600A, SignalVu-PC, RSA5000/6000 (RF 트레이스, 피크 마커) |
+| **06. SMUs** | 소스미터 (SourceMeter) | Keithley 2450, 2460, 2461, 2470, 2600B 시리즈 (I-V 특성 곡선 실시간 플로팅, 2선/4선식 측정) |
+| **07. DC Precision test** | 모듈형 정밀 테스트 시스템 | Keithley MP5000 (TSP 스크립트 명령어 체계 자동 지원) |
+| **08. Tek VISA** | 범용 VISA 명령어 콘솔 | 커스텀 SCPI/TSP 명령어 송수신(Write/Query/Read) 및 응답 지연시간(ms) 로깅 |
 
 ---
 
@@ -51,11 +51,11 @@
 
 ### 방법 1. 통합 설치 파일로 원클릭 설치 (권장)
 Python이나 별도 라이브러리가 없는 일반 Windows PC에서도 바로 설치해 사용할 수 있습니다.
-1. `06.Release/TekQuickStart_Setup.exe` 실행
-2. 설치 경로 확인 (기본값: `C:\TekQuickStart`) 및 바로가기 옵션 선택
+1. `06.Release/SAITEK Tektronix Quick Start SW_Setup.exe` 실행
+2. 설치 경로 확인 (기본값: `C:\SAITEK Tektronix Quick Start SW`) 및 바로가기 옵션 선택
 3. **[프로그램 설치 시작]** 클릭 → 실행 엔진 및 30종 PDF 매뉴얼 자동 설치 완료
 
-> 💡 **무설치(Portable) 실행:** 설치 없이 `06.Release/TekQuickStart_Portable/TekQuickStart.exe`를 직접 실행해도 동일하게 동작합니다.  
+> 💡 **무설치(Portable) 실행:** 설치 없이 `06.Release/SAITEK Tektronix Quick Start SW_Portable/SAITEK Tektronix Quick Start SW.exe`를 직접 실행해도 동일하게 동작합니다.  
 > 💡 **실제 장비 연결 시:** USB/LAN 실제 계측기 연결을 위해 **TekVISA** 또는 **NI-VISA** 드라이버 설치를 권장합니다.
 
 ### 방법 2. 소스 코드로 직접 실행 (개발자용)
@@ -98,6 +98,7 @@ SAITEK_Quick-Start/
 4_Waveform_Trace: 오실로스코프 파형 / RF 스펙트럼 / SMU I-V 스윕 포인트 원본 로우 데이터
 
 📄 문서 및 문의
-상세 사용자 매뉴얼: 01.docs/ 폴더 내 TekQuickStart_Beginner_User_Guide.pptx 참고
+상세 사용자 매뉴얼: 01.docs/06.development_guides/ 폴더 내 `SAITEK Tektronix Quick Start SW_Beginner_User_Guide.pptx` 및 `.pdf` 참고
 
+기술 문의: 사이텍(주) | E-mail : ssaitek@ssaitek.com | Tel : 041-698-4242
 Maintainer: @jwlee3528 (SAITEK)

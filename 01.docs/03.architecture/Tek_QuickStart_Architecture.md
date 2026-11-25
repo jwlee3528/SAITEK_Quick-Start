@@ -1,7 +1,7 @@
-# Tektronix QuickStart 통합 제어 및 측정 프로그램 아키텍처 명세서
+# SAITEK Tektronix Quick Start SW 통합 제어 및 측정 프로그램 아키텍처 명세서
 
 ## 1. 개요 (Overview)
-본 문서는 `01.docs/10. Tek_Manuals` 내 7개 폴더(총 26개 프로그래머/레퍼런스 매뉴얼)를 기반으로 개발된 **Tektronix QuickStart Program**의 시스템 구조와 장비별 리모트 준비 사항, 입력 파라미터, 측정 항목 및 동작 프로세스를 정의합니다.
+본 문서는 `01.docs/10. Tek_Manuals` 내 8개 폴더(총 30개 프로그래머/레퍼런스 매뉴얼)를 기반으로 개발된 **SAITEK Tektronix Quick Start SW**의 시스템 구조와 장비별 리모트 준비 사항, 입력 파라미터, 측정 항목 및 동작 프로세스를 정의합니다.
 
 ---
 

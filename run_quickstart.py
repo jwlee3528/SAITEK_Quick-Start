@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Root Entry Point for Tektronix QuickStart Program
+Root Entry Point for SAITEK Tektronix Quick Start SW
 """
 import os
 import sys

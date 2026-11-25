@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tektronix QuickStart Program - Dialogs for Requirement 4 (Beginner-Friendly Interactive Startup Remote Readiness)
+SAITEK Tektronix Quick Start SW - Dialogs for Requirement 4 (Beginner-Friendly Interactive Startup Remote Readiness)
 and Requirement 2 (Pre-Start Input & Measurement Confirmation Modal).
 """
 
@@ -235,7 +235,7 @@ class StartupReadinessDialog(QDialog):
         self.use_simulation = True
         self.step_cards: List[ChecklistStepCard] = []
 
-        self.setWindowTitle("Tektronix QuickStart - 초보자용 장비 연결 마법사 & 사전 준비 점검표")
+        self.setWindowTitle("SAITEK Tektronix Quick Start SW - 초보자용 장비 연결 마법사 & 사전 준비 점검표")
         self._build_ui()
         fit_and_center_window(self, target_w_ratio=0.86, target_h_ratio=0.88, min_w=820, min_h=560, max_w=1280, max_h=920)
         self._run_auto_scan()
@@ -264,7 +264,7 @@ class StartupReadinessDialog(QDialog):
                 lbl_dlg_logo.setPixmap(pix.scaledToHeight(28, Qt.TransformationMode.SmoothTransformation))
                 b_top.addWidget(lbl_dlg_logo)
 
-        title = QLabel("🧭 장비-PC 연결 가이드 및 항목별 사전 준비 점검 마법사")
+        title = QLabel("🧭 SAITEK Tektronix Quick Start SW — 장비-PC 연결 가이드 및 사전 준비 점검 마법사")
         title.setFont(QFont("Malgun Gothic", 13, QFont.Weight.Bold))
         title.setStyleSheet("color: #ffffff;")
         b_top.addWidget(title, 1)

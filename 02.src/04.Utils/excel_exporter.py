@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tektronix QuickStart Program - Excel (.xlsx) Multi-Sheet Exporter
+SAITEK Tektronix Quick Start SW - Excel (.xlsx) Multi-Sheet Exporter
 Exports Summary Metadata, Remote Readiness Checklist, Input Parameters,
 Time-Series Measured Data (+ Min/Max/Mean/StdDev statistics), and Waveform/Spectrum Trace Data.
 """

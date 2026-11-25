@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ============================================================================
-echo   Tektronix ^& Keithley QuickStart Program - 배포용 설치파일/실행파일 자동 빌드
+echo   SAITEK Tektronix Quick Start SW - 배포용 설치파일/실행파일 자동 빌드
 echo ============================================================================
 echo.
 "C:\Users\jwlee1\AppData\Local\Programs\Python\Python314\python.exe" "%~dp004.tools\01.Scripts\build_release.py"

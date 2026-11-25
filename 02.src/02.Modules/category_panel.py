@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tektronix QuickStart Program - Category Workspace Panel
+SAITEK Tektronix Quick Start SW - Category Workspace Panel
 Implements the 4 core user requirements per manual folder:
 1. Folder-specific instrument model selection & manual reference
 2. Explicit separation of [Required Input Parameters] vs [Measurable Items] with pre-start user confirmation
@@ -1467,7 +1467,7 @@ class CategoryWorkspacePanel(QWidget):
 
         model = self.get_current_model()
         ts_file = time.strftime("%Y%m%d_%H%M%S")
-        default_name = f"TekQuickStart_{self.profile.folder_id}_{model.model_id}_{ts_file}.xlsx"
+        default_name = f"SAITEK Tektronix Quick Start SW_{self.profile.folder_id}_{model.model_id}_{ts_file}.xlsx"
         default_path = os.path.join(self.data_export_dir, default_name)
         os.makedirs(self.data_export_dir, exist_ok=True)
 

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Tektronix & Keithley Multi-Category QuickStart Program
-Self-Contained Windows GUI Installer (TekQuickStart_Setup.exe)
+SAITEK Tektronix Quick Start SW
+Self-Contained Windows GUI Installer (SAITEK Tektronix Quick Start SW_Setup.exe)
 
-Extracts the embedded TekQuickStart_Payload.zip (containing TekQuickStart.exe,
-all Python/PyQt6/PyVISA runtime DLLs, 26 PDF manuals across 7 categories,
+Extracts the embedded SAITEK Tektronix Quick Start SW_Payload.zip (containing SAITEK Tektronix Quick Start SW.exe,
+all Python/PyQt6/PyVISA runtime DLLs, 30 PDF manuals across 8 categories,
 and data folders) to the user-selected installation folder on any clean Windows PC.
 """
 
@@ -19,14 +19,14 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
 
-APP_TITLE = "Tektronix & Keithley QuickStart Program v1.2"
-EXE_FILENAME = "TekQuickStart.exe"
-PAYLOAD_ZIP_NAME = "TekQuickStart_Payload.zip"
-DEFAULT_INSTALL_DIR = r"C:\TekQuickStart"
+APP_TITLE = "SAITEK Tektronix Quick Start SW"
+EXE_FILENAME = "SAITEK Tektronix Quick Start SW.exe"
+PAYLOAD_ZIP_NAME = "SAITEK Tektronix Quick Start SW_Payload.zip"
+DEFAULT_INSTALL_DIR = r"C:\SAITEK Tektronix Quick Start SW"
 
 
 def get_embedded_payload_path() -> str:
-    """Locates the embedded TekQuickStart_Payload.zip inside PyInstaller _MEIPASS or script dir."""
+    """Locates the embedded SAITEK Tektronix Quick Start SW_Payload.zip inside PyInstaller _MEIPASS or script dir."""
     if getattr(sys, "frozen", False):
         bundle_dir = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
     else:
@@ -57,18 +57,18 @@ def create_windows_shortcut(target_exe: str, shortcut_path: str, working_dir: st
 
 
 def create_uninstaller_bat(install_dir: str) -> str:
-    """Creates an Uninstall_TekQuickStart.bat file in the installation directory."""
-    uninstaller_path = os.path.join(install_dir, "Uninstall_TekQuickStart.bat")
+    """Creates an Uninstall_SAITEK Tektronix Quick Start SW.bat file in the installation directory."""
+    uninstaller_path = os.path.join(install_dir, "Uninstall_SAITEK Tektronix Quick Start SW.bat")
     content = f"""@echo off
 chcp 65001 >nul
 echo ============================================================================
-echo   Tektronix ^& Keithley QuickStart Program 제거 (Uninstaller)
+echo   SAITEK Tektronix Quick Start SW 제거 (Uninstaller)
 echo ============================================================================
 echo.
 echo 설치 경로: "{install_dir}"
 echo 바탕화면 및 시작 메뉴 바로가기를 삭제하고 설치 폴더를 정리합니다...
-del /f /q "%USERPROFILE%\\Desktop\\Tektronix QuickStart.lnk" 2>nul
-del /f /q "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Tektronix QuickStart.lnk" 2>nul
+del /f /q "%USERPROFILE%\\Desktop\\SAITEK Tektronix Quick Start SW.lnk" 2>nul
+del /f /q "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\SAITEK Tektronix Quick Start SW.lnk" 2>nul
 echo.
 echo 바로가기가 제거되었습니다.
 echo 프로그램 폴더("{install_dir}")를 완전히 삭제하려면 창을 닫고 폴더를 삭제하세요.
@@ -139,7 +139,7 @@ class TekInstallerWizard:
 
         title_lbl = tk.Label(
             header,
-            text="⚡ Tektronix & Keithley QuickStart Program 통합 설치 마법사",
+            text="⚡ SAITEK Tektronix Quick Start SW 통합 설치 마법사",
             font=("Malgun Gothic", 14, "bold"),
             fg="#38BDF8",
             bg="#1E293B",
@@ -151,7 +151,7 @@ class TekInstallerWizard:
             header,
             text=(
                 "다른 PC에 Python이나 별도 패키지가 전혀 설치되어 있지 않아도 실행에 필요한 모든 런타임 파일,\n"
-                "8개 장비 폴더별 30종 PDF 매뉴얼, 가상 시뮬레이터 및 실행 파일(TekQuickStart.exe)을 한 번에 설치합니다."
+                "8개 장비 폴더별 30종 PDF 매뉴얼, 가상 시뮬레이터 및 실행 파일(SAITEK Tektronix Quick Start SW.exe)을 한 번에 설치합니다."
             ),
             font=("Malgun Gothic", 9),
             fg="#CBD5E1",
@@ -174,8 +174,8 @@ class TekInstallerWizard:
         comp_frame.pack(fill=tk.X, padx=14, pady=6)
 
         components_text = (
-            "  • 실행 파일 (TekQuickStart.exe) + 내장 Python / PyQt6 / PyQtGraph / NumPy / OpenPyXL / PyVISA-py 엔진\n"
-            "  • 8대 계측기 폴더별 모듈 (01.AFGs / 02.DC Power / 03.MP5000 / 04.Scopes / 05.RSA / 06.SMUs / 07.Tek VISA / 08.DMM)\n"
+            "  • 실행 파일 (SAITEK Tektronix Quick Start SW.exe) + 내장 Python / PyQt6 / PyQtGraph / NumPy / OpenPyXL / PyVISA-py 엔진\n"
+            "  • 8대 계측기 폴더별 모듈 (01.AFGs / 02.DC Power / 03.DMM / 04.Scopes / 05.RSA / 06.SMUs / 07.DC Precision / 08.Tek VISA)\n"
             "  • 초보자용 단계별 장비 연결 점검 마법사 + 30종 공식 프로그래머 매뉴얼 PDF 원본 (01.docs/10. Tek_Manuals)\n"
             "  • 물리 엔진 기반 가상 장비 시뮬레이터 ([VIRTUAL] 모드) + Run History 비교 + Excel/CSV/PNG 리포트 출력기"
         )
@@ -257,21 +257,21 @@ class TekInstallerWizard:
         }
         tk.Checkbutton(
             opt_frame,
-            text="바탕화면에 [Tektronix QuickStart] 실행 바로가기 아이콘 생성 (권장)",
+            text="바탕화면에 [SAITEK Tektronix Quick Start SW] 실행 바로가기 아이콘 생성 (권장)",
             variable=self.desktop_shortcut_var,
             **cb_style,
         ).pack(fill=tk.X, pady=1)
 
         tk.Checkbutton(
             opt_frame,
-            text="Windows 시작 메뉴에 [Tektronix QuickStart] 프로그램 등록",
+            text="Windows 시작 메뉴에 [SAITEK Tektronix Quick Start SW] 프로그램 등록",
             variable=self.startmenu_shortcut_var,
             **cb_style,
         ).pack(fill=tk.X, pady=1)
 
         tk.Checkbutton(
             opt_frame,
-            text="설치 완료 후 Tektronix QuickStart 프로그램 즉시 실행 (TekQuickStart.exe)",
+            text="설치 완료 후 SAITEK Tektronix Quick Start SW 즉시 실행 (SAITEK Tektronix Quick Start SW.exe)",
             variable=self.launch_after_var,
             **cb_style,
         ).pack(fill=tk.X, pady=1)
@@ -347,14 +347,13 @@ class TekInstallerWizard:
             return
         chosen = filedialog.askdirectory(
             parent=self.root,
-            title="Tektronix QuickStart 설치 폴더 선택",
+            title="SAITEK Tektronix Quick Start SW 설치 폴더 선택",
             initialdir=self.install_dir_var.get() or r"C:\\",
         )
         if chosen:
-            # Append TekQuickStart if user selected root or generic folder
             norm = os.path.normpath(chosen)
-            if not norm.lower().endswith("tekquickstart"):
-                norm = os.path.join(norm, "TekQuickStart")
+            if not norm.lower().endswith("saitek tektronix quick start sw"):
+                norm = os.path.join(norm, "SAITEK Tektronix Quick Start SW")
             self.install_dir_var.set(norm)
 
     def _start_installation(self) -> None:
@@ -408,12 +407,12 @@ class TekInstallerWizard:
                 self._update_progress(93.0, "바탕화면 바로가기 아이콘 생성 중...")
                 desktop_dir = os.path.join(os.path.expanduser("~"), "Desktop")
                 if os.path.isdir(desktop_dir):
-                    lnk_path = os.path.join(desktop_dir, "Tektronix QuickStart.lnk")
+                    lnk_path = os.path.join(desktop_dir, "SAITEK Tektronix Quick Start SW.lnk")
                     create_windows_shortcut(
                         exe_path,
                         lnk_path,
                         target_dir,
-                        "Tektronix & Keithley Multi-Category QuickStart Program",
+                        "SAITEK Tektronix Quick Start SW",
                     )
 
             if self.startmenu_shortcut_var.get():
@@ -421,12 +420,12 @@ class TekInstallerWizard:
                 appdata = os.environ.get("APPDATA", "")
                 start_menu_dir = os.path.join(appdata, "Microsoft", "Windows", "Start Menu", "Programs")
                 if os.path.isdir(start_menu_dir):
-                    lnk_path = os.path.join(start_menu_dir, "Tektronix QuickStart.lnk")
+                    lnk_path = os.path.join(start_menu_dir, "SAITEK Tektronix Quick Start SW.lnk")
                     create_windows_shortcut(
                         exe_path,
                         lnk_path,
                         target_dir,
-                        "Tektronix & Keithley Multi-Category QuickStart Program",
+                        "SAITEK Tektronix Quick Start SW",
                     )
 
             self._update_progress(100.0, f"✅ 설치 완료! ({exe_path})")
@@ -442,10 +441,10 @@ class TekInstallerWizard:
 
         messagebox.showinfo(
             "설치 완료 (Installation Complete)",
-            f"Tektronix & Keithley QuickStart Program 설치가 완료되었습니다!\n\n"
+            f"SAITEK Tektronix Quick Start SW 설치가 완료되었습니다!\n\n"
             f"• 설치 폴더: {target_dir}\n"
             f"• 실행 파일: {exe_path}\n\n"
-            f"바탕화면의 [Tektronix QuickStart] 아이콘 또는 설치 폴더의 TekQuickStart.exe를 실행하여 바로 사용할 수 있습니다.",
+            f"바탕화면의 [SAITEK Tektronix Quick Start SW] 아이콘 또는 설치 폴더의 'SAITEK Tektronix Quick Start SW.exe'를 실행하여 바로 사용할 수 있습니다.",
             parent=self.root,
         )
 

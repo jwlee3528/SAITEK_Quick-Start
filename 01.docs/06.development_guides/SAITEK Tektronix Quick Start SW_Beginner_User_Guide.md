@@ -1,24 +1,24 @@
-# 📘 Tektronix & Keithley QuickStart Program 초보자용 완벽 사용자 가이드
+# 📘 SAITEK Tektronix Quick Start SW 초보자용 완벽 사용자 가이드
 
 > **대상 독자**: 계측기 원격 제어(SCPI / TSP)나 파이썬 프로그램을 전혀 다뤄본 적이 없는 초보자  
 > **제공 문서 포맷**:
-> - **PowerPoint 프레젠테이션 (`.pptx`)**: `01.docs/06.development_guides/TekQuickStart_Beginner_User_Guide.pptx` (및 `06.Release/` 폴더 내 포함)
-> - **PDF 사용자 매뉴얼 (`.pdf`)**: `01.docs/06.development_guides/TekQuickStart_Beginner_User_Guide.pdf` (및 `06.Release/` 폴더 내 포함)
-> - **Markdown 가이드 (`.md`)**: 본 문서
+> - **PowerPoint 프레젠테이션 (`.pptx`)**: `01.docs/06.development_guides/SAITEK Tektronix Quick Start SW_Beginner_User_Guide.pptx` (및 `06.Release/` 폴더 내 포함)
+> - **PDF 사용자 매뉴얼 (`.pdf`)**: `01.docs/06.development_guides/SAITEK Tektronix Quick Start SW_Beginner_User_Guide.pdf` (및 `06.Release/` 폴더 내 포함)
+> - **Markdown 가이드 (`.md`)**: `01.docs/06.development_guides/SAITEK Tektronix Quick Start SW_Beginner_User_Guide.md`
 
 ---
 
 ## 목차 (Table of Contents)
 
 1. [프로그램 개요 및 4대 핵심 기능](#1-프로그램-개요-및-4대-핵심-기능)
-2. [STEP 0. 새 PC에 프로그램 설치하기 (`TekQuickStart_Setup.exe`)](#2-step-0-새-pc에-프로그램-설치하기-tekquickstart_setupexe)
+2. [STEP 0. 새 PC에 프로그램 설치하기 (`SAITEK Tektronix Quick Start SW_Setup.exe`)](#2-step-0-새-pc에-프로그램-설치하기-saitek-tektronix-quick-start-sw_setupexe)
 3. [STEP 1. 프로그램 첫 실행 — 초보자용 장비 연결 점검 마법사](#3-step-1-프로그램-첫-실행--초보자용-장비-연결-점검-마법사)
 4. [STEP 2. 메인 화면 전체 구조 한눈에 보기 (6대 영역)](#4-step-2-메인-화면-전체-구조-한눈에-보기-6대-영역)
 5. [STEP 3. 장비 연결하기 (`[VIRTUAL]` 가상 연습 모드 vs 실제 장비 USB/LAN 연결)](#5-step-3-장비-연결하기-virtual-가상-연습-모드-vs-실제-장비-usblan-연결)
 6. [STEP 4. 좌측 패널 — 장비 모델 선택, 매뉴얼 열기, [사용자 입력 필수 파라미터] 설정](#6-step-4-좌측-패널--장비-모델-선택-매뉴얼-열기-사용자-입력-필수-파라미터-설정)
 7. [STEP 5. 중앙 패널 — [측정 가능 항목] 선택 및 동작 전 최종 확인 팝업](#7-step-5-중앙-패널--측정-가능-항목-선택-및-동작-전-최종-확인-팝업)
 8. [STEP 6. 실시간 측정 제어 (`▶ 시작` / `⏸ 일시정지` / `⏹ 완전 정지`) 및 그래프 분석](#8-step-6-실시간-측정-제어--시작---일시정지---완전-정지-및-그래프-분석)
-9. [7개 장비 폴더별 측정 실습 가이드 (`01. AFGs` ~ `07. Tek VISA`)](#9-7개-장비-폴더별-측정-실습-가이드-01-afgs--07-tek-visa)
+9. [8개 장비 분류별 측정 실습 및 고급 화면 기능 가이드 (`01. AFGs` ~ `08. Tek VISA`)](#9-8개-장비-분류별-측정-실습-및-고급-화면-기능-가이드-01-afgs--08-tek-visa)
 10. [STEP 7. 측정 데이터 Excel (`.xlsx`) 4-시트 자동 저장 및 초보자 FAQ](#10-step-7-측정-데이터-excel-xlsx-4-시트-자동-저장-및-초보자-faq)
 
 ---
@@ -27,36 +27,36 @@
 
 본 프로그램은 `01.docs/10. Tek_Manuals` 폴더 내 **8개 장비 제품군 폴더(총 30종 공식 프로그래머·레퍼런스 매뉴얼 PDF)**를 기반으로 개발된 통합 계측 제어 및 데이터 수집 프로그램입니다.
 
-1. **8개 매뉴얼 폴더별 전용 탭 분리**:
+1. **8개 매뉴얼 폴더별 전용 탭 분리 (`01 ~ 08` 순서)**:
    - `01. AFGs` (임의/함수 파형 발생기)
-   - `02. DC power Supplies` (프로그래머블 직류 전원공급기)
-   - `03. DC Precision Test` (MP5000 모듈형 정밀 테스트 시스템)
-   - `04. Oscilloscopes` (오실로스코프 파형 캡처 및 자동 계측)
+   - `02. DC power Supplies` (프로그래머블 직류 전원공급기: Series 2200 / 2260B)
+   - `03. DMM` (Keithley DMM6500 / DMM7510 / Model 2110 / Model 2010 정밀 디지털 멀티미터)
+   - `04. Oscilloscopes` (오실로스코프 다중 채널 `CH1~CH4` 동시 파형 캡처 및 자동 계측)
    - `05. Spectrum Analyzers` (실시간 스펙트럼 분석기 RF 피크 분석)
    - `06. SMUs` (Keithley SourceMeter 정밀 I-V 스윕 및 저항 측정)
-   - `07. Tek VISA` (범용 VISA 명령어 루프 테스트 및 버스 모니터)
-   - `08. Digit Multimeter(DMM)` (Keithley DMM6500 / DMM7510 / 2110 / 2010 정밀 디지털 멀티미터)
+   - `07. DC Precision test` (MP5000 모듈형 TSP 정밀 테스트 시스템)
+   - `08. Tek VISA` (범용 VISA 명령어 루프 테스트 및 버스 모니터)
 2. **[사용자 입력 필수 파라미터]와 [측정 가능 항목]의 명확한 분리 및 시작 전 최종 확인 팝업**
-3. **`▶ 측정 시작` / `⏸ 일시정지 & 재개` / `⏹ 완전 정지 (출력 즉시 OFF 안전 차단)` / 실시간 그래프 / Excel (`.xlsx`) 저장**
-4. **아무것도 모르는 초보자도 그대로 따라 할 수 있는 단계별 장비 연결 점검 마법사 (`StartupReadinessDialog`)**
+3. **`▶ 측정 시작` / `⏸ 일시정지 & 재개` / `⏹ 완전 정지 (출력 즉시 OFF 안전 차단)` / 실시간 그래프 & 데이터 표 개별 새 창 분리(`Pop-Out`) / Excel (`.xlsx`) 저장**
+4. **아무것도 모르는 초보자도 그대로 따라 할 수 있는 단계별 장비 연결 점검 마법사 (`StartupReadinessDialog`) 및 사이텍(주) 기술 지원 안내**
 
 ---
 
-## 2. STEP 0. 새 PC에 프로그램 설치하기 (`TekQuickStart_Setup.exe`)
+## 2. STEP 0. 새 PC에 프로그램 설치하기 (`SAITEK Tektronix Quick Start SW_Setup.exe`)
 
-다른 PC에 Python이나 관련 프로그램이 전혀 설치되어 있지 않아도 **`06.Release/TekQuickStart_Setup.exe`** 파일 1개만 복사하여 실행하면 모든 필수 파일이 설치됩니다.
+다른 PC에 Python이나 관련 프로그램이 전혀 설치되어 있지 않아도 **`06.Release/SAITEK Tektronix Quick Start SW_Setup.exe`** 파일 1개만 복사하여 실행하면 모든 필수 파일이 설치됩니다.
 
 ![통합 설치 마법사 화면](screenshots/01_installer_wizard.png)
 
-1. **`[1] 설치 폴더 경로 확인`**: 기본 설치 위치는 `C:\TekQuickStart` 입니다. 원하는 폴더로 변경하려면 **[폴더 찾아보기...]**를 클릭합니다.
+1. **`[1] 설치 폴더 경로 확인`**: 기본 설치 위치는 `C:\SAITEK Tektronix Quick Start SW` 입니다. 원하는 폴더로 변경하려면 **[폴더 찾아보기...]**를 클릭합니다.
 2. **`[2] 바로가기 및 실행 옵션 체크`**: 바탕화면 바로가기 아이콘 생성 및 설치 완료 후 즉시 실행 옵션을 체크합니다.
-3. **`[3] [🚀 프로그램 설치 시작]` 클릭**: 내장된 실행 파일(`TekQuickStart.exe`), 런타임 라이브러리, 26종 PDF 매뉴얼이 자동 설치되며 바탕화면의 **`Tektronix QuickStart`** 아이콘으로 언제든 실행할 수 있습니다.
+3. **`[3] [🚀 프로그램 설치 시작]` 클릭**: 내장된 실행 파일(`SAITEK Tektronix Quick Start SW.exe`), 런타임 라이브러리, 30종 PDF 매뉴얼이 자동 설치되며 바탕화면의 **`SAITEK Tektronix Quick Start SW`** 아이콘으로 언제든 실행할 수 있습니다.
 
 ---
 
 ## 3. STEP 1. 프로그램 첫 실행 — 초보자용 장비-PC 연결 가이드 팝업창
 
-프로그램(`TekQuickStart.exe`)을 처음 실행하면(또는 메인 화면 상단 바의 **`[📋 사전 준비 점검표]`** 버튼을 클릭하면) 가장 먼저 아래와 같은 **초보자용 장비-PC 연결 가이드 및 항목별 사전 준비 점검 마법사** 팝업창이 열립니다.
+프로그램(`SAITEK Tektronix Quick Start SW.exe`)을 처음 실행하면(또는 메인 화면 상단 바의 **`[📋 사전 준비 점검표]`** 버튼을 클릭하면) 가장 먼저 아래와 같은 **초보자용 장비-PC 연결 가이드 및 항목별 사전 준비 점검 마법사** 팝업창이 열립니다.
 
 ![초보자용 사전 준비 점검 마법사](screenshots/02_startup_readiness_wizard.png)
 
@@ -90,12 +90,12 @@
 
 ![메인 화면 6대 핵심 영역](screenshots/04_main_window_overview.png)
 
-- **`① 상단 VISA 리소스 연결 바`**: 장비 리소스 검색, 연결/해제, `[VIRTUAL]` 가상 모드 전환, `*IDN?` 조회, `*RST` 리셋, `[🧭 초보자용 장비 연결 마법사]` 재호출
-- **`② 7대 장비 폴더별 탭`**: `01. AFGs` 부터 `07. Tek VISA` 까지 폴더별 전용 작업 공간 전환
-- **`③ 좌측 패널 (장비 모델 & 사전 준비 점검표 & 사용자 입력 필수 파라미터)`**: 세부 모델 선택, 매뉴얼 열기, 단계별 점검 카드, 장비에 인가할 입력 파라미터 설정
-- **`④ 중앙 패널 (측정 가능 항목 선택 & 동작 제어)`**: 수집할 측정 항목 체크박스 및 `▶ 측정 시작` / `⏸ 일시정지` / `⏹ 완전 정지` / `📊 Excel 저장` 버튼
-- **`⑤ 우측 패널 (실시간 그래프 & 측정 데이터 테이블)`**: `pyqtgraph` 실시간 파형/트렌드 그래프 및 시계열 데이터 표
-- **`⑥ 하단 패널 (직접 SCPI/TSP 명령어 송수신 & 실시간 I/O 로그 콘솔)`**: 모든 통신 명령과 응답 시간(ms)을 실시간 기록
+- **`① 상단 VISA 리소스 연결 바 (SSAITEK 로고 포함)`**: 좌측 상단 `SSAITEK` 로고, 장비 리소스 검색, 연결/해제, `[시뮬레이션 모드]` 전환, `[📋 사전 준비 점검표]` 재호출, `[🖥️ 화면 맞춤]`, `[📞 기술 문의]`, `[🚨 긴급 정지 (ALL STOP)]`
+- **`② 8대 장비 분류별 탭`**: `01. AFGs` → `02. DC power Supplies` → `03. DMM` → `04. Oscilloscopes` → `05. Spectrum Analyzers` → `06. SMUs` → `07. DC Precision test` → `08. Tek VISA` 전용 작업 공간 전환
+- **`③ 좌측 패널 (장비 모델 & 사전 준비 점검표 & 사용자 입력 필수 파라미터)`**: 세부 모델 선택, `[📖 PDF 매뉴얼]`, `[🔍 상태 확인 (*IDN?)]`, 단계별 점검 카드, 장비에 인가할 입력 파라미터 설정
+- **`④ 중앙 패널 (측정 가능 항목 선택 & 실시간 수치 카드)`**: 수집할 측정 항목 체크박스 및 실시간 측정값 표시
+- **`⑤ 우측 패널 (실시간 그래프 & 측정 데이터 테이블 & 새 창 분리)`**: `▶ 측정 시작` / `⏸ 일시정지` / `⏹ 완전 정지` / `💾 Excel 저장` 제어, `pyqtgraph` 실시간 파형/트렌드 그래프, 시계열 데이터 표 및 **`[🗗 그래프 새 창 분리]` / `[🗗 데이터 표 새 창 분리]`**
+- **`⑥ 하단 패널 (직접 SCPI/TSP 명령어 송수신 & 실시간 I/O 로그 콘솔 & 기술 문의)`**: 모든 통신 명령과 응답 시간(ms)을 실시간 기록하며, 우측 하단 상태바에 **`📞 기술 문의 : 사이텍(주) | E-mail : ssaitek@ssaitek.com | Tel : 041-698-4242`** 연락처가 상시 표시됩니다.
 
 ---
 
@@ -140,33 +140,43 @@
 
 ---
 
-## 9. 7개 장비 폴더별 측정 실습 가이드 (`01. AFGs` ~ `07. Tek VISA`)
+## 9. 8개 장비 분류별 측정 실습 및 고급 화면 기능 가이드 (`01. AFGs` ~ `08. Tek VISA`)
 
-### ① `01. AFGs` & `02. DC power Supplies` / `03. DC Precision Test`
+### ① `01. AFGs` · `02. DC power Supplies` · `03. DMM`
 ![02. DC power Supplies 측정 화면](screenshots/06_cat02_dcpower.png)
+![03. DMM 측정 화면](screenshots/09b_cat08_dmm.png)
 - **`01. AFGs`**: 파형(SIN/SQU/RAMP/PULS), 주파수(Hz), 진폭(Vpp), 오프셋(V)을 입력하고 출력 파형 프리뷰와 설정 상태를 확인합니다.
-- **`02. DC power Supplies` & `03. DC Precision Test`**: 목표 전압(V)과 전류 제한(A)을 설정하고 시간에 따른 실제 출력 전압(V)·전류(A)·전력(W) 트렌드 그래프를 모니터링합니다.
+- **`02. DC power Supplies` (Series 2200 / 2260B)**: 목표 전압(V)과 전류 제한(A)을 설정하고 시간에 따른 실제 출력 전압(V)·전류(A)·전력(W) 트렌드 그래프를 모니터링합니다(측정 중 전압/전류 변경 실시간 반영 및 USB-CDC 세션 자동 유지 지원).
+- **`03. DMM` (Keithley DMM6500 / DMM7510 / Model 2110 / Model 2010)**: 5½ ~ 7½ 디지트 정밀 멀티미터로 DC/AC 전압·전류, 2선/4선 저항, 주파수, 온도, 커패시턴스 및 1 MS/s 디지타이저 파형과 누적 평균/변동폭(Pk-Pk)/표준편차/단자 위치(`FRON`/`REAR`)를 초당 16~20회 이상 고속 측정합니다.
 
-### ② `04. Oscilloscopes` (오실로스코프 파형 캡처 및 자동 계측)
+### ② `04. Oscilloscopes` (다중 채널 `CH1~CH4` 동시 파형 캡처 및 자동 계측)
 ![04. Oscilloscopes 측정 화면](screenshots/07_cat04_oscilloscope.png)
-- 채널(CH1~CH4), 수직 스케일(V/div), 수평 타임베이스(s/div), 트리거 레벨(V)을 설정하고 실시간 오실로스코프 파형(`CURVe?`)과 첨두간 전압(`Vpp`), 주파수(`Freq`), 평균(`Mean`), 실효치(`RMS`)를 동시에 수집합니다.
+- **다중 채널(`☑ CH1 ☑ CH2 ☑ CH3 ☑ CH4`) 동시 선택**: 원하는 채널들을 여러 개 동시에 체크하면 모든 선택 채널의 파형(`CURVe?`)이 한 그래프에 색상별로 동시에 겹쳐서(Overlay) 표시되고, 표와 Excel에는 `[CH1]`, `[CH2]` 등 채널별 컬럼과 파형 데이터가 분리 저장됩니다.
+- **실시간 파형 + 주파수/주기/진폭 동시 고속 측정**: 파형과 수치 항목(주파수, 주기, Vpp, Mean, RMS)을 함께 체크해도 지연이나 타임아웃 없이 설정 주기(예: `0.500s`)에 맞춰 정확히 수집되며, `시작 시 Autoset 실행 여부` 체크 시에도 오토셋 완료(`*OPC?`)를 자동 대기한 뒤 측정을 시작합니다.
 
 ### ③ `05. Spectrum Analyzers` (RF 스펙트럼 트레이스 및 피크 탐색)
 ![05. Spectrum Analyzers 측정 화면](screenshots/08_cat05_spectrum.png)
 - 중심 주파수(Center Freq MHz), 스팬(Span MHz), 기준 레벨(Ref Level dBm)을 입력하고 주파수 영역 RF 스펙트럼 트레이스(dBm vs MHz) 및 최대 피크 파워/주파수를 실시간 추적합니다.
 
-### ④ `06. SMUs` (소스미터) · `07. Tek VISA` · `08. Digit Multimeter(DMM)`
+### ④ `06. SMUs` · `07. DC Precision test` (MP5000) · `08. Tek VISA`
 ![06. SMUs 측정 화면](screenshots/09_cat06_smu.png)
-![08. Digit Multimeter 측정 화면](screenshots/09b_cat08_dmm.png)
 - **`06. SMUs`**: 전압/전류 소스 및 스윕 범위(Start ~ Stop), 컴플라이언스 한계(Compliance Limit)를 설정하여 반도체/저항 소자의 실시간 I-V 특성 곡선과 저항(`Ω`), 전력(`W`)을 측정합니다.
-- **`07. Tek VISA`**: 원하는 SCPI/TSP 명령어를 반복 쿼리하면서 수치 응답과 통신 지연 시간(Latency ms)을 정밀 진단합니다.
-- **`08. Digit Multimeter(DMM)`**: Keithley DMM6500(6½ 디지트), DMM7510(7½ 디지트), Model 2110(5½ 디지트), Model 2010(7½ 디지트)을 지원하며, DC/AC 전압·전류, 2선/4선 저항, 주파수, 온도, 커패시턴스 및 1 MS/s 디지타이저 파형과 누적 평균/변동폭(Pk-Pk)/표준편차/단자 위치(`FRON`/`REAR`)를 실시간 측정합니다.
+- **`07. DC Precision test` (MP5000)**: MP5103 메인프레임의 슬롯(Slot 1~3)과 모듈(SMU / PSU)을 선택하여 TSP(`slot[Z].smu[X].*`) 명령어로 정밀 소스·측정 및 스윕을 수행합니다.
+- **`08. Tek VISA`**: 원하는 SCPI/TSP 명령어를 반복 쿼리하면서 수치 응답과 통신 지연 시간(Latency ms)을 정밀 진단합니다.
 
 ### ⑤ 실행 이력(Run History) 비교 및 그래프 커서 통계
 ![실행 이력 및 Run 비교 화면](screenshots/12_run_history.png)
 ![그래프 커서 및 구간 통계 화면](screenshots/11_graph_cursors.png)
 - **`📜 실행 이력 (Run History)`**: 측정을 새로 시작해도 이전 측정이 사라지지 않고 `Run #1, #2...`로 자동 보존되며, 여러 Run을 선택해 한 그래프에 겹쳐 비교하거나 자동 내보내기(Excel/CSV/PNG)를 설정할 수 있습니다.
 - **`➕ 커서 추가` & `👁 시리즈 표시/숨김` & 컬럼 편집**: 그래프에 커서 2개를 놓아 구간 통계(`N / Min / Max / Mean / Pk-Pk / Δy`)를 확인하고, 표 머리글을 우클릭해 컬럼 이름을 변경하거나 숨길 수 있습니다.
+
+### ⑥ 그래프 및 측정 데이터 테이블 개별 새 창 분리 (`Pop-Out`) & 기술 문의
+![그래프 새 창 분리 화면](screenshots/13_detached_graph_window.png)
+- **`[🗗 그래프 새 창 분리]` & `[🗗 데이터 표 새 창 분리]`**: 우측 측정 패널 상단의 버튼을 누르면 실시간 그래프나 측정 데이터 표를 각각 독립된 윈도우 창으로 분리하여 보조 모니터로 옮기거나 전체 화면으로 크게 볼 수 있습니다. 분리된 창 우측 상단의 **`[↙ 원래 화면으로 복귀 (Dock)]`** 버튼을 누르거나 창을 닫으면 즉시 원래 자리로 돌아옵니다.
+- **기술 문의 (사이텍(주))**:
+  - **회사명**: 사이텍(주) (SSAITEK)
+  - **E-mail**: `ssaitek@ssaitek.com`
+  - **Tel**: `041-698-4242`
 
 ---
 

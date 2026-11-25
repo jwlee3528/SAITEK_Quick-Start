@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Tektronix QuickStart Program - Main Integrated Window
-Integrates the 7 Tek_Manuals folders into separate tabs/modules, global VISA connection bar,
+SAITEK Tektronix Quick Start SW - Main Integrated Window
+Integrates the 8 Tek_Manuals folders into separate tabs/modules, global VISA connection bar,
 Startup Remote Readiness Check dialog, and live OpenChoice Talker/Listener I/O Monitor dock.
 """
 
@@ -81,7 +81,7 @@ class TekQuickStartMainWindow(QMainWindow):
         self.is_compact_screen = avail.height() <= 920 or avail.width() <= 1600
 
         self.setWindowTitle(
-            f"Tektronix & Keithley QuickStart Program (화면 자동 최적화: {avail.width()}×{avail.height()})"
+            f"SAITEK Tektronix Quick Start SW (화면 자동 최적화: {avail.width()}×{avail.height()})"
         )
 
         self.logo_path = resolve_app_Resource_path("로고 이미지.png")
@@ -156,7 +156,7 @@ class TekQuickStartMainWindow(QMainWindow):
             )
         c_layout.addWidget(self.lbl_logo)
 
-        title_lbl = QLabel("⚡ TEK QUICKSTART")
+        title_lbl = QLabel("⚡ SAITEK Tektronix Quick Start SW")
         title_lbl.setFont(QFont("Malgun Gothic", 10 if self.is_compact_screen else 11, QFont.Weight.Bold))
         title_lbl.setStyleSheet("color: #38bdf8;")
         c_layout.addWidget(title_lbl)
@@ -357,7 +357,7 @@ class TekQuickStartMainWindow(QMainWindow):
         self.lbl_support_footer.setToolTip("클릭하거나 상단 [📞 기술 문의] 버튼을 누르면 상세 기술 문의 안내 창이 열립니다.")
         self.status_bar.addPermanentWidget(self.lbl_support_footer)
 
-        self._show_status_message("Tektronix QuickStart 준비 완료. 상단에서 장비 폴더 탭(01. AFGs ~ 08. Tek VISA)을 선택하세요.")
+        self._show_status_message("SAITEK Tektronix Quick Start SW 준비 완료. 상단에서 장비 폴더 탭(01. AFGs ~ 08. Tek VISA)을 선택하세요.")
 
     def _show_tech_support_dialog(self):
         logo_html = ""

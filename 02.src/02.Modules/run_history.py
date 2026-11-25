@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tektronix QuickStart Program - Run History, Run Comparison, Export Options & Graph Cursors.
+SAITEK Tektronix Quick Start SW - Run History, Run Comparison, Export Options & Graph Cursors.
 
 Inspired by the KickStart Quick Start Guide (KKS-903-01M):
   * Run History         : every measurement run is kept; select a run to view its table / graph again.
@@ -583,7 +583,7 @@ def export_run_bundle(
     """formats: subset of {'xlsx', 'csv', 'png'}. Returns the list of written files."""
     os.makedirs(folder, exist_ok=True)
     ts = time.strftime("%Y%m%d_%H%M%S")
-    base = f"TekQuickStart_{run.folder_id}_{run.model_id or 'model'}_Run{run.run_id:03d}_{ts}"
+    base = f"SAITEK Tektronix Quick Start SW_{run.folder_id}_{run.model_id or 'model'}_Run{run.run_id:03d}_{ts}"
     base_path = os.path.join(folder, base)
     written: List[str] = []
     if "xlsx" in formats:
